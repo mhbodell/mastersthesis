@@ -99,3 +99,50 @@ sum_uni$statistics[1:2,1]
 plot(1:length(sum_uni$statistics[1:ind[1],1]),sum_uni$statistics[1:ind[1],1], type="l")
 points(polls2$fieldDate.num,polls2$C)
 
+######## M ###########
+
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
+
+datM = na.omit(polls[,c('M','collectPeriodFrom','collectPeriodTo','n', 'PublDate')])
+datM = datM[order(datM$collectPeriodFrom),]
+datM$collectPeriodFrom = as.Date(datM$collectPeriodFrom)
+datM$collectPeriodTo = as.Date(datM$collectPeriodTo)
+datM$PublDate = as.Date(datM$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datM$collectPeriodTo[length(datM$collectPeriodTo)])
+datM =  datM[-which(datM$collectPeriodFrom<orig.date),]
+datM$collectPeriodFrom.num = julian(datM$collectPeriodFrom,origin=orig.date) #days since origin
+datM$collectPeriodTo.num = julian(datM$collectPeriodTo,origin=orig.date) #days since origin
+datM$fieldDate.num = floor((datM$collectPeriodFrom.num + datM$collectPeriodTo.num) / 2)
+datM$M = datM$M/100
+                
+jags_M ='
+model{
+                 
+#observed model
+for(i in 1:npolls){
+M[i] ~ dnorm(alphaM[day[i]],precM[i])
+}
+                 
+#dynamic model 
+for(i in 2:nperiods){
+alphaM[i] ~ dnorm(alphaM[i-1],phiM)
+}
+                 
+## priors
+omega ~ dgamma(1, 1)
+phiM <- 1/pow(omega,2)
+}
+'
+pM = (1 / (datM$M*(1-datM$M)/datM$n))
+data_M = list(M = M, precM = pM, alphaM = c(0.2623,rep(NA,end.date - orig.date-1)),
+              day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_M,con="kalman_M.bug")
+                 
+system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
+                 
+system.time(outM <- coda.samples( jags_mod_M,variable.names = c("alphaM", "M" ), n.iter = 5000, n.thin = 100))
+sumM = summary(outM)
+                 #str(sumM)
+                 plot(yM, type="l")
