@@ -1,131 +1,101 @@
-### Libraries
-library(pscl)
-library(rjags)
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", dec = ".", header = TRUE)
+parties = c("M", "FP", "C", "KD", "S", "V", "MP", "SD")
 
-data(AustralianElectionPolling,package="pscl")
-dat <- AustralianElectionPolling
+predData = polls[, c(parties, "n", "house")]
+predData[, parties] = predData[, parties]/100
+predData$time = as.Date(polls$collectPeriodTo)
+predData$publDate = as.Date(polls$PublDate)
+predData$periodFrom = as.Date(polls$collectPeriodFrom)
+predData$periodTo = as.Date(polls$collectPeriodTo)
+predData$house = factor(predData$house)
 
+predData = predData[!(is.na(predData$periodFrom) | is.na(predData$periodTo)), ]
+predData = predData[!(is.na(predData$house) | is.na(predData$n)), ]
+predData = predData[!(is.na(predData$publDate)), ]
+predData = predData[-which(rowSums(predData[, 1:8], na.rm = TRUE) == 1),]
 
-
-dat$startDate <- as.Date(dat$startDate)
-dat$endDate <- as.Date(dat$endDate)
-### Start at 2004 elex.
-orig.date <- as.Date("2004-10-09")
-### End at 2007 elex.
-end.date <- as.Date("2007-11-24")
-
-dat$startDate.num <- julian(dat$startDate,origin=orig.date)
-dat$endDate.num <- julian(dat$endDate,origin=orig.date)
-dat$fieldDate.num <- floor((dat$startDate.num + dat$endDate.num) / 2)
-
-dat$y <- dat$ALP / 100
-
-## Jags will use precision
-### Stan will use variance
-dat$var <- dat$y*(1-dat$y)/dat$sampleSize
-dat$prec <- 1 / dat$var
-
-forJags <- list(y = dat$y,
-	date = dat$fieldDate.num,
-	nPolls = nrow(dat),
-	kappa = 0.01,
-	myvar = dat$var,
-	prec = dat$prec,
-	xi = c(0.376,rep(NA,end.date - orig.date - 2),0.434),
-	nPeriods = as.numeric(end.date - orig.date))
-
-jags_code <- '
-	model {
-		for (i in 1:nPolls) {
-			mu[i] <- xi[date[i]]
-			y[i] ~ dnorm(mu[i],prec[i])
-		}
-		for (t in 2:(nPeriods-1)) {
-			xi[t] ~ dnorm(xi[t-1],tau)
-		}
-
-		omega ~ dunif(0,kappa)
-		tau <- 1/pow(omega,2)
-	}
-'
-
-writeLines(jags_code,con="kalman.bug")
+predData = predData[predData$time > as.Date("2006-09-17") & !is.na(predData$time),]
+polls2 = predData[order(predData$periodFrom),]
 
 
-system.time(jags.mod <- jags.model("kalman.bug",
-	data = forJags))
-update(jags.mod,n.iter = 10000)
-system.time(out <- coda.samples(jags.mod,variable.names = c("xi"),
-	n.iter = 10000,
-	n.thin = 10))
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(polls2$periodTo[length(polls2$periodTo)])
 
-holder <- summary(out)
-plot(1:forJags$nPeriods,holder$statistics[,1],
-	xlab = "Day",
-	ylab = "ALP vote intention",type="l")
+polls2$collectPeriodFrom.num = julian(polls2$periodFrom, origin=orig.date) #days since origin
+polls2$collectPeriodTo.num = julian(polls2$periodTo,origin=orig.date) #days since origin
+polls2$fieldDate.num = floor((polls2$collectPeriodFrom.num + polls2$collectPeriodTo.num) / 2)
 
-stan_code <- '
-	data {
-		int<lower=0> nPolls;
-		int<lower=0> nPeriods; //
-		int<lower=0> date[nPolls];
-		real y[nPolls];
-		real kappa;
-		real myvar[nPolls];
-	} 
-	parameters {
-		real<lower=0,upper=1> xi0[nPeriods];
-		real omega;
-	}
-	transformed parameters {
-		real xi[nPeriods];
-		real tau;
+polls2$precM = 1 / (polls2$M*(1-polls2$M)/polls2$n)
+polls2$precL = 1 / (polls2$FP*(1-polls2$FP)/polls2$n)
+polls2$precC = 1 / (polls2$C*(1-polls2$C)/polls2$n)
+polls2$precKD = 1 / (polls2$KD*(1-polls2$KD)/polls2$n)
+polls2$precS = 1 / (polls2$S*(1-polls2$S)/polls2$n)
+polls2$precMP = 1 / (polls2$MP*(1-polls2$MP)/polls2$n)
+polls2$precV = 1 / (polls2$V*(1-polls2$V)/polls2$n)
+polls2$precSD = 1 / (polls2$SD*(1-polls2$SD)/polls2$n)
+polls2$precSD = ifelse(is.na(polls2$precSD),1000000,polls2$SD) #to get precisions
 
-		tau <- pow(omega, 2);
+jags_uni ='
+model{
 
-		xi[1] <- 0.376;
-		xi[nPeriods] <- 0.434;
-		for (i in 2:(nPeriods-1)) {
-			xi[i] <- xi0[i];
-		}
-	}
-	model {
-		// observation model
-		for (i in 1:nPolls) {
-			y[i]  ~ normal(xi[date[i]],myvar[i]);
-		}
-
-		// transition model
-		// First two periods: take from known value 
-		xi0[1] ~ normal(xi[1],tau);
-		xi0[2] ~ normal(xi[1],tau);
-		for (t in 3:(nPeriods-1)) {
-			xi0[t] ~ normal(xi0[t-1],tau);
-		}
-		xi0[nPeriods] ~ normal(xi[nPeriods],.000001);
-		omega ~ uniform(0,kappa);
-	}
-'
-
-## Stan will complain if we leave partial data in
-forJags$xi <- NULL
-
-## Init func with dramatic step change in latent support
-my.initfunc <- function() {
-	xi0 <- c(rep(0.376,floor(forJags$nPeriods/2)),
-		rep(0.434,ceiling(forJags$nPeriods/2)))
-	omega <- runif(1,0,.01)
-	list(xi0 = xi0,omega=omega)
+#observed model
+for(i in 1:npolls){
+M[i] ~ dnorm(xM[day[i]], precM[i])
+L[i] ~ dnorm(xL[day[i]], precL[i])
+C[i] ~ dnorm(xC[day[i]], precC[i])
+KD[i] ~ dnorm(xKD[day[i]], precKD[i])
+S[i] ~ dnorm(xS[day[i]], precS[i])
+MP[i] ~ dnorm(xMP[day[i]], precMP[i])
+V[i] ~ dnorm(xV[day[i]], precV[i])
+SD[i] ~ dnorm(xSD[day[i]], precSD[i])
 }
 
-system.time(fit <- stan(model_code = stan_code,
-	data = forJags,
-	chains = 1,
-	init = my.initfunc,
-	iter = 20000,
-	thin = 10))
+#dynamic model 
+for(i in 2:nperiods){
+xM[i] ~ dnorm(xM[i-1], phiM)
+xL[i] ~ dnorm(xL[i-1], phiL)
+xC[i] ~ dnorm(xC[i-1], phiC)
+xKD[i] ~ dnorm(xKD[i-1], phiKD)
+xS[i] ~ dnorm(xS[i-1], phiS)
+xMP[i] ~ dnorm(xMP[i-1], phiMP)
+xV[i] ~ dnorm(xV[i-1], phiV)
+xSD[i] ~ dnorm(xSD[i-1], phiSD)
+}
 
-samples <- extract(fit, c("xi"))
-plot(1:forJags$nPeriods,colMeans(samples$xi),
-	xlab = "Day",
-	ylab = "ALP vote intention",type="l")
+## priors
+omega ~ dgamma(1, 1)
+phiM <- 1/pow(omega,2)
+phiL <- 1/pow(omega,2)
+phiC <- 1/pow(omega,2)
+phiKD <- 1/pow(omega,2)
+phiS <- 1/pow(omega,2)
+phiMP <- 1/pow(omega,2)
+phiV <- 1/pow(omega,2)
+phiSD <- 1/pow(omega,2)
+}
+'
+
+data_uni = list(M = polls2$M, L = polls2$L, C = polls2$C, KD = polls2$KD,
+                S = polls2$S, MP = polls2$MP, V = polls2$V, SD = polls2$SD,
+                precM = polls2$precM, precL = polls2$precL, precC = polls2$precC, precKD = polls2$precKD,
+                precS = polls2$precS, precMP = polls2$precMP, precV = polls2$precV, precSD = polls2$precSD,
+                xM = c(0.2623,rep(NA,end.date - orig.date-1)), xL = c(0.0754,rep(NA,end.date - orig.date-1)),
+                xC = c(0.0788,rep(NA,end.date - orig.date-1)), xKD = c(0.0659,rep(NA,end.date - orig.date-1)),
+                xS = c(0.3499,rep(NA,end.date - orig.date-1)), xMP = c(0.0524,rep(NA,end.date - orig.date-1)),
+                xV = c(0.0585,rep(NA,end.date - orig.date-1)), xSD = c(0,rep(NA,end.date - orig.date-1)),
+                day = polls2$fieldDate.num, npolls = nrow(polls2), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_uni,con="kalman_uni.bug")
+
+system.time(jags_mod_uni <- jags.model("kalman_uni.bug", data = data_uni))
+
+system.time(out_uni <- coda.samples( jags_mod_uni,variable.names = c("xM", "xL", "xC", "xKD",
+                                                                     "xS", "xMP", "xV", "xSD"), n.iter = 1000,n.thin = 10))
+sum_uni = summary(out_uni)
+
+ind = c(3425, 2*3425, 3*3425, 4*3425, 5*3425, 6*3425, 7*3425, 8*3425)
+sum_uni$statistics[1:2,1]
+
+plot(1:length(sum_uni$statistics[1:ind[1],1]),sum_uni$statistics[1:ind[1],1], type="l")
+points(polls2$fieldDate.num,polls2$C)
+
