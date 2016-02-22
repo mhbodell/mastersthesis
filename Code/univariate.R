@@ -148,35 +148,8 @@ system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M" ), n.it
 sumM = summary(outM)
 cred_intM = HPDinterval(outM[,760:length(sumM$statistics[,1])], 0.95)
 
-
-#### plot M ####
-library(ggplot2)
-str(sumM)
-meanM = sumM$statistics[760:length(sumM$statistics[,1]),1]
-low2 = (meanM - 1.96 * sumM$statistics[760:length(sumM$statistics[,1]),2])*100
-high2 = (meanM + 1.96 * sumM$statistics[760:length(sumM$statistics[,1]),2])*100
-df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
-     time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-     low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xM*100) +
-  geom_line(col="blue", alpha=1)  +
-  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="blue3") +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") +
-  ggtitle(paste("M")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
-  length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
-  y=datM$M*100, house=datM$house), aes(x=x, y=y), alpha = 1, color="blue", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for M", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-         
 ###### L ######
-datL = na.omit(polls[,c('FP','collectPeriodFrom','collectPeriodTo','n', 'PublDate')])
+datL = na.omit(polls[,c('FP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
 datL = datL[order(datL$collectPeriodFrom),]
 datL$collectPeriodFrom = as.Date(datL$collectPeriodFrom)
 datL$collectPeriodTo = as.Date(datL$collectPeriodTo)
@@ -214,5 +187,267 @@ writeLines(jags_L,con="kalman_L.bug")
                  
 system.time(jags_mod_L <- jags.model("kalman_L.bug", data = data_L))
                  
-system.time(outL <- coda.samples( jags_mod_L,variable.names = c("xL", "L" ), n.iter = 1000, n.thin = 100))
+system.time(outL <- coda.samples( jags_mod_L,variable.names = c("xL", "L" ), n.iter = 3000, n.thin = 100))
 sumL = summary(outL)
+cred_intL = HPDinterval(outL[,760:length(sumL$statistics[,1])], 0.95)
+
+
+###### KD ######
+datKD = na.omit(polls[,c('KD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datKD = datKD[order(datKD$collectPeriodFrom),]
+datKD$collectPeriodFrom = as.Date(datKD$collectPeriodFrom)
+datKD$collectPeriodTo = as.Date(datKD$collectPeriodTo)
+datKD$PublDate = as.Date(datKD$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datKD$collectPeriodTo[length(datKD$collectPeriodTo)])
+datKD =  datKD[-which(datKD$collectPeriodFrom<orig.date),]
+datKD$collectPeriodFrom.num = julian(datKD$collectPeriodFrom,origin=orig.date) #days since origin
+datKD$collectPeriodTo.num = julian(datKD$collectPeriodTo,origin=orig.date) #days since origin
+datKD$fieldDate.num = floor((datKD$collectPeriodFrom.num + datKD$collectPeriodTo.num) / 2)
+datKD$KD = datKD$KD/100
+
+jags_KD ='
+model{
+
+#observed model
+for(i in 1:npolls){
+KD[i] ~ dnorm(xKD[day[i]],precKD[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xKD[i] ~ dnorm(xKD[i-1],phiKD)
+}
+
+## priors
+omega ~ dgamma(1, 1)
+phiKD <- 1/pow(omega,2)
+}
+'
+pKD = (1 / (datKD$KD*(1-datKD$KD)/datKD$n))
+data_KD = list(KD = datKD$KD, precKD = pKD, xKD = c(0.0659,rep(NA,end.date - orig.date-1)),
+              day = datKD$fieldDate.num, npolls = nrow(datKD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_KD,con="kalman_KD.bug")
+                 
+system.time(jags_mod_KD <- jags.model("kalman_KD.bug", data = data_KD))
+                 
+system.time(outKD <- coda.samples( jags_mod_KD,variable.names = c("xKD", "KD" ), n.iter = 3000, n.thin = 100))
+sumKD = summary(outKD)
+cred_intKD = HPDinterval(outKD[,760:length(sumKD$statistics[,1])], 0.95)
+
+###### C ######
+datC = na.omit(polls[,c('C','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datC = datC[order(datC$collectPeriodFrom),]
+datC$collectPeriodFrom = as.Date(datC$collectPeriodFrom)
+datC$collectPeriodTo = as.Date(datC$collectPeriodTo)
+datC$PublDate = as.Date(datC$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datC$collectPeriodTo[length(datC$collectPeriodTo)])
+datC =  datC[-which(datC$collectPeriodFrom<orig.date),]
+datC$collectPeriodFrom.num = julian(datC$collectPeriodFrom,origin=orig.date) #days since origin
+datC$collectPeriodTo.num = julian(datC$collectPeriodTo,origin=orig.date) #days since origin
+datC$fieldDate.num = floor((datC$collectPeriodFrom.num + datC$collectPeriodTo.num) / 2)
+datC$C = datC$C/100
+
+jags_C ='
+model{
+
+#observed model
+for(i in 1:npolls){
+C[i] ~ dnorm(xC[day[i]],precC[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xC[i] ~ dnorm(xC[i-1],phiC)
+}
+
+## priors
+omega ~ dgamma(1, 1)
+phiC <- 1/pow(omega,2)
+}
+'
+pC = (1 / (datC$C*(1-datC$C)/datC$n))
+data_C = list(C = datC$C, precC = pC, xC = c(0.0788,rep(NA,end.date - orig.date-1)),
+              day = datC$fieldDate.num, npolls = nrow(datC), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_C,con="kalman_C.bug")
+
+system.time(jags_mod_C <- jags.model("kalman_C.bug", data = data_C))
+
+system.time(outC <- coda.samples( jags_mod_C,variable.names = c("xC", "C" ), n.iter = 3000, n.thin = 100))
+sumC = summary(outC)
+cred_intC = HPDinterval(outC[,760:length(sumC$statistics[,1])], 0.95)
+
+
+###### S ######
+datS = na.omit(polls[,c('S','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datS = datS[order(datS$collectPeriodFrom),]
+datS$collectPeriodFrom = as.Date(datS$collectPeriodFrom)
+datS$collectPeriodTo = as.Date(datS$collectPeriodTo)
+datS$PublDate = as.Date(datS$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datS$collectPeriodTo[length(datS$collectPeriodTo)])
+datS =  datS[-which(datS$collectPeriodFrom<orig.date),]
+datS$collectPeriodFrom.num = julian(datS$collectPeriodFrom,origin=orig.date) #days since origin
+datS$collectPeriodTo.num = julian(datS$collectPeriodTo,origin=orig.date) #days since origin
+datS$fieldDate.num = floor((datS$collectPeriodFrom.num + datS$collectPeriodTo.num) / 2)
+datS$S = datS$S/100
+
+jags_S ='
+model{
+
+#observed model
+for(i in 1:npolls){
+S[i] ~ dnorm(xS[day[i]],precS[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xS[i] ~ dnorm(xS[i-1],phiS)
+}
+
+## priors
+omega ~ dgamma(1, 1)
+phiS <- 1/pow(omega,2)
+}
+'
+pS = (1 / (datS$S*(1-datS$S)/datS$n))
+data_S = list(S = datS$S, precS = pS, xS = c(0.3499,rep(NA,end.date - orig.date-1)),
+              day = datS$fieldDate.num, npolls = nrow(datS), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_S,con="kalman_S.bug")
+
+system.time(jags_mod_S <- jags.model("kalman_S.bug", data = data_S))
+
+system.time(outS <- coda.samples( jags_mod_S,variable.names = c("xS", "S" ), n.iter = 3000, n.thin = 100))
+sumS = summary(outS)
+cred_intS = HPDinterval(outS[,760:length(sumS$statistics[,1])], 0.95)
+
+###### MP ######
+datMP = na.omit(polls[,c('MP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datMP = datMP[order(datMP$collectPeriodFrom),]
+datMP$collectPeriodFrom = as.Date(datMP$collectPeriodFrom)
+datMP$collectPeriodTo = as.Date(datMP$collectPeriodTo)
+datMP$PublDate = as.Date(datMP$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datMP$collectPeriodTo[length(datMP$collectPeriodTo)])
+datMP =  datMP[-which(datMP$collectPeriodFrom<orig.date),]
+datMP$collectPeriodFrom.num = julian(datMP$collectPeriodFrom,origin=orig.date) #days since origin
+datMP$collectPeriodTo.num = julian(datMP$collectPeriodTo,origin=orig.date) #days since origin
+datMP$fieldDate.num = floor((datMP$collectPeriodFrom.num + datMP$collectPeriodTo.num) / 2)
+datMP$MP = datMP$MP/100
+
+jags_MP ='
+model{
+
+#observed model
+for(i in 1:npolls){
+MP[i] ~ dnorm(xMP[day[i]],precMP[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xMP[i] ~ dnorm(xMP[i-1],phiMP)
+}
+
+## priors
+omega ~ dgamma(1, 1)
+phiMP <- 1/pow(omega,2)
+}
+'
+pMP = (1 / (datMP$MP*(1-datMP$MP)/datMP$n))
+data_MP = list(MP = datMP$MP, precMP = pMP, xMP = c(0.0524,rep(NA,end.date - orig.date-1)),
+               day = datMP$fieldDate.num, npolls = nrow(datMP), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_MP,con="kalman_MP.bug")
+
+system.time(jags_mod_MP <- jags.model("kalman_MP.bug", data = data_MP))
+
+system.time(outMP <- coda.samples( jags_mod_MP,variable.names = c("xMP", "MP" ), n.iter = 3000, n.thin = 100))
+sumMP = summary(outMP)
+cred_intMP = HPDinterval(outMP[,760:length(sumMP$statistics[,1])], 0.95)
+
+###### V ######
+datV = na.omit(polls[,c('V','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datV = datV[order(datV$collectPeriodFrom),]
+datV$collectPeriodFrom = as.Date(datV$collectPeriodFrom)
+datV$collectPeriodTo = as.Date(datV$collectPeriodTo)
+datV$PublDate = as.Date(datV$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datV$collectPeriodTo[length(datV$collectPeriodTo)])
+datV =  datV[-which(datV$collectPeriodFrom<orig.date),]
+datV$collectPeriodFrom.num = julian(datV$collectPeriodFrom,origin=orig.date) #days since origin
+datV$collectPeriodTo.num = julian(datV$collectPeriodTo,origin=orig.date) #days since origin
+datV$fieldDate.num = floor((datV$collectPeriodFrom.num + datV$collectPeriodTo.num) / 2)
+datV$V = datV$V/100
+
+jags_V ='
+model{
+
+#observed model
+for(i in 1:npolls){
+V[i] ~ dnorm(xV[day[i]],precV[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xV[i] ~ dnorm(xV[i-1],phiV)
+}
+
+## priors
+omega ~ dgamma(1, 1)
+phiV <- 1/pow(omega,2)
+}
+'
+pV = (1 / (datV$V*(1-datV$V)/datV$n))
+data_V = list(V = datV$V, precV = pV, xV = c(0.0585,rep(NA,end.date - orig.date-1)),
+              day = datV$fieldDate.num, npolls = nrow(datV), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_V,con="kalman_V.bug")
+
+system.time(jags_mod_V <- jags.model("kalman_V.bug", data = data_V))
+
+system.time(outV <- coda.samples( jags_mod_V,variable.names = c("xV", "V" ), n.iter = 3000, n.thin = 100))
+sumV = summary(outV)
+cred_intV = HPDinterval(outV[,760:length(sumV$statistics[,1])], 0.95)
+
+###### SD ######
+datSD = na.omit(polls[,c('SD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datSD = datSD[order(datSD$collectPeriodFrom),]
+datSD$collectPeriodFrom = as.Date(datSD$collectPeriodFrom)
+datSD$collectPeriodTo = as.Date(datSD$collectPeriodTo)
+datSD$PublDate = as.Date(datSD$PublDate)
+orig.date = as.Date("2006-09-17")
+end.date = as.Date(datSD$collectPeriodTo[length(datSD$collectPeriodTo)])
+datSD =  datSD[-which(datSD$collectPeriodFrom<orig.date),]
+datSD$collectPeriodFrom.num = julian(datSD$collectPeriodFrom,origin=orig.date) #days since origin
+datSD$collectPeriodTo.num = julian(datSD$collectPeriodTo,origin=orig.date) #days since origin
+datSD$fieldDate.num = floor((datSD$collectPeriodFrom.num + datSD$collectPeriodTo.num) / 2)
+datSD$SD = datSD$SD/100
+
+jags_SD ='
+model{
+
+#observed model
+for(i in 1:npolls){
+SD[i] ~ dnorm(xSD[day[i]],precSD[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xSD[i] ~ dnorm(xSD[i-1],phiSD)
+}
+
+## priors
+omega ~ dgamma(1, 1)
+phiSD <- 1/pow(omega,2)
+}
+'
+pSD = (1 / (datSD$SD*(1-datSD$SD)/datSD$n))
+data_SD = list(SD = datSD$SD, precSD = pSD, xSD = c(0.0293,rep(NA,end.date - orig.date-1)),
+               day = datSD$fieldDate.num, npolls = nrow(datSD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_SD,con="kalman_SD.bug")
+
+system.time(jags_mod_SD <- jags.model("kalman_SD.bug", data = data_SD))
+
+system.time(outSD <- coda.samples( jags_mod_SD,variable.names = c("xSD", "SD" ), n.iter = 3000, n.thin = 100))
+sumSD = summary(outSD)
+cred_intSD = HPDinterval(outSD[,751:length(sumSD$statistics[,1])], 0.95)
+
