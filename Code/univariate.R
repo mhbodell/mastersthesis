@@ -1,5 +1,5 @@
 data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
-polls = repmis::source_data(data_url, sep = ",", dec = ".", header = TRUE)
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
 parties = c("M", "FP", "C", "KD", "S", "V", "MP", "SD")
 
 predData = polls[, c(parties, "n", "house")]
@@ -104,7 +104,8 @@ library(rjags)
 data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
 polls = repmis::source_data(data_url, sep = ",", header = TRUE)
 
-datM = na.omit(polls[,c('M','collectPeriodFrom','collectPeriodTo','n', 'PublDate')])
+datM = na.omit(polls[,c('M','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datM$house = factor(datM$house)
 datM = datM[order(datM$collectPeriodFrom),]
 datM$collectPeriodFrom = as.Date(datM$collectPeriodFrom)
 datM$collectPeriodTo = as.Date(datM$collectPeriodTo)
@@ -117,7 +118,7 @@ datM$collectPeriodFrom.num = julian(datM$collectPeriodFrom,origin=orig.date) #da
 datM$collectPeriodTo.num = julian(datM$collectPeriodTo,origin=orig.date) #days since origin
 datM$fieldDate.num = floor((datM$collectPeriodFrom.num + datM$collectPeriodTo.num) / 2)
 datM$M = datM$M/100
-                
+               
 jags_M ='
 model{
                  
@@ -143,17 +144,37 @@ writeLines(jags_M,con="kalman_M.bug")
                  
 system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
                  
-system.time(outM <- coda.samples( jags_mod_M,variable.names = c("xM", "M" ), n.iter = 1000, n.thin = 100))
+system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M" ), n.iter = 3000, n.thin = 100))
 sumM = summary(outM)
+cred_intM = HPDinterval(outM[,760:length(sumM$statistics[,1])], 0.95)
+
 
 #### plot M ####
 library(ggplot2)
-
-df = data.frame(xM = sumM$statistics[760:length(sumM$statistics[,1]),1], time=c(1:3425))
+str(sumM)
+meanM = sumM$statistics[760:length(sumM$statistics[,1]),1]
+low2 = (meanM - 1.96 * sumM$statistics[760:length(sumM$statistics[,1]),2])*100
+high2 = (meanM + 1.96 * sumM$statistics[760:length(sumM$statistics[,1]),2])*100
+df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
+     time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+     low2=low2, high2=high2)
 ggplot(df) +
-  aes(x = time, y = xM) +
-  geom_point()
-
+  aes(x = time, y = xM*100) +
+  geom_line(col="blue", alpha=1)  +
+  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="blue3") +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") +
+  ggtitle(paste("M")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
+  length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
+  y=datM$M*100, house=datM$house), aes(x=x, y=y), alpha = 1, color="blue", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for M", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+         
 ###### L ######
 datL = na.omit(polls[,c('FP','collectPeriodFrom','collectPeriodTo','n', 'PublDate')])
 datL = datL[order(datL$collectPeriodFrom),]
