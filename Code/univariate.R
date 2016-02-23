@@ -133,10 +133,11 @@ xM[i] ~ dnorm(xM[i-1],phiM)
 }
                  
 ## priors
-omega ~ dgamma(1, 1)
+omega ~ dgamma(10, 10) ## hyperparameters in gamma affects the smoothness of the curve
 phiM <- 1/pow(omega,2)
 }
 '
+
 pM = (1 / (datM$M*(1-datM$M)/datM$n))
 data_M = list(M = datM$M, precM = pM, xM = c(0.2623,rep(NA,end.date - orig.date-1)),
               day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
@@ -144,7 +145,7 @@ writeLines(jags_M,con="kalman_M.bug")
                  
 system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
                  
-system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M" ), n.iter = 3000, n.thin = 100))
+system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M" ), n.iter = 5000, n.thin = 100))
 sumM = summary(outM)
 cred_intM = HPDinterval(outM[,760:length(sumM$statistics[,1])], 0.95)
 
@@ -187,7 +188,7 @@ writeLines(jags_L,con="kalman_L.bug")
                  
 system.time(jags_mod_L <- jags.model("kalman_L.bug", data = data_L))
                  
-system.time(outL <- coda.samples( jags_mod_L,variable.names = c("xL", "L" ), n.iter = 3000, n.thin = 100))
+system.time(outL <- coda.samples( jags_mod_L,variable.names = c("xL", "L" ), n.iter = 5000, n.thin = 100))
 sumL = summary(outL)
 cred_intL = HPDinterval(outL[,760:length(sumL$statistics[,1])], 0.95)
 
@@ -231,7 +232,7 @@ writeLines(jags_KD,con="kalman_KD.bug")
                  
 system.time(jags_mod_KD <- jags.model("kalman_KD.bug", data = data_KD))
                  
-system.time(outKD <- coda.samples( jags_mod_KD,variable.names = c("xKD", "KD" ), n.iter = 3000, n.thin = 100))
+system.time(outKD <- coda.samples( jags_mod_KD,variable.names = c("xKD", "KD" ), n.iter = 5000, n.thin = 100))
 sumKD = summary(outKD)
 cred_intKD = HPDinterval(outKD[,760:length(sumKD$statistics[,1])], 0.95)
 
@@ -274,7 +275,7 @@ writeLines(jags_C,con="kalman_C.bug")
 
 system.time(jags_mod_C <- jags.model("kalman_C.bug", data = data_C))
 
-system.time(outC <- coda.samples( jags_mod_C,variable.names = c("xC", "C" ), n.iter = 3000, n.thin = 100))
+system.time(outC <- coda.samples( jags_mod_C,variable.names = c("xC", "C" ), n.iter = 5000, n.thin = 100))
 sumC = summary(outC)
 cred_intC = HPDinterval(outC[,760:length(sumC$statistics[,1])], 0.95)
 
@@ -318,7 +319,7 @@ writeLines(jags_S,con="kalman_S.bug")
 
 system.time(jags_mod_S <- jags.model("kalman_S.bug", data = data_S))
 
-system.time(outS <- coda.samples( jags_mod_S,variable.names = c("xS", "S" ), n.iter = 3000, n.thin = 100))
+system.time(outS <- coda.samples( jags_mod_S,variable.names = c("xS", "S" ), n.iter = 5000, n.thin = 100))
 sumS = summary(outS)
 cred_intS = HPDinterval(outS[,760:length(sumS$statistics[,1])], 0.95)
 
@@ -361,7 +362,7 @@ writeLines(jags_MP,con="kalman_MP.bug")
 
 system.time(jags_mod_MP <- jags.model("kalman_MP.bug", data = data_MP))
 
-system.time(outMP <- coda.samples( jags_mod_MP,variable.names = c("xMP", "MP" ), n.iter = 3000, n.thin = 100))
+system.time(outMP <- coda.samples( jags_mod_MP,variable.names = c("xMP", "MP" ), n.iter = 5000, n.thin = 100))
 sumMP = summary(outMP)
 cred_intMP = HPDinterval(outMP[,760:length(sumMP$statistics[,1])], 0.95)
 
@@ -404,7 +405,7 @@ writeLines(jags_V,con="kalman_V.bug")
 
 system.time(jags_mod_V <- jags.model("kalman_V.bug", data = data_V))
 
-system.time(outV <- coda.samples( jags_mod_V,variable.names = c("xV", "V" ), n.iter = 3000, n.thin = 100))
+system.time(outV <- coda.samples( jags_mod_V,variable.names = c("xV", "V" ), n.iter = 5000, n.thin = 100))
 sumV = summary(outV)
 cred_intV = HPDinterval(outV[,760:length(sumV$statistics[,1])], 0.95)
 
@@ -447,7 +448,7 @@ writeLines(jags_SD,con="kalman_SD.bug")
 
 system.time(jags_mod_SD <- jags.model("kalman_SD.bug", data = data_SD))
 
-system.time(outSD <- coda.samples( jags_mod_SD,variable.names = c("xSD", "SD" ), n.iter = 3000, n.thin = 100))
+system.time(outSD <- coda.samples( jags_mod_SD,variable.names = c("xSD", "SD" ), n.iter = 5000, n.thin = 100))
 sumSD = summary(outSD)
 cred_intSD = HPDinterval(outSD[,751:length(sumSD$statistics[,1])], 0.95)
 
