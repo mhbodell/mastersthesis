@@ -133,7 +133,7 @@ xM[i] ~ dnorm(xM[i-1],phiM)
 }
                  
 ## priors
-omega ~ dgamma(10, 10) ## hyperparameters in gamma affects the smoothness of the curve
+omega ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
 phiM <- 1/pow(omega,2)
 }
 '
