@@ -1,6 +1,5 @@
 #### plot M ####
 library(ggplot2)
-str(sumM)
 meanM = sumM$statistics[760:length(sumM$statistics[,1]),1]
 low2 = (meanM - 1.96 * sumM$statistics[760:length(sumM$statistics[,1]),2])*100
 high2 = (meanM + 1.96 * sumM$statistics[760:length(sumM$statistics[,1]),2])*100
@@ -11,7 +10,7 @@ ggplot(df) +
   aes(x = time, y = xM*100) +
   geom_line(col="blue", alpha=1)  +
   #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="blue3") +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.3, fill="blue") +
   ggtitle(paste("M")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
@@ -26,7 +25,6 @@ ggplot(df) +
 
 #### plot L ####
 library(ggplot2)
-library(ggplot2)
 meanL = sumL$statistics[760:length(sumL$statistics[,1]),1]
 low2 = (meanL - 1.96 * sumL$statistics[760:length(sumL$statistics[,1]),2])*100
 high2 = (meanL + 1.96 * sumL$statistics[760:length(sumL$statistics[,1]),2])*100
@@ -35,13 +33,13 @@ dfL = data.frame(xL = meanL , low=cred_intL[[1]][,1]*100, high=cred_intL[[1]][,2
                 low2=low2, high2=high2)
 ggplot(dfL) +
   aes(x = time, y = xL*100) +
-  geom_line(col="lightblue", alpha=1)  +
+  geom_line(col="lightblue4", alpha=1)  +
   #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="lightblue3") +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill="lightblue") +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill="lightblue3") +
   ggtitle(paste("L")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
                                    length=length(c(0.0754,rep(NA,end.date - orig.date-1))))[datL$fieldDate.num], 
-                             y=datL$L*100, house=datL$house), aes(x=x, y=y), alpha = 1, color="lightblue", shape=1, size=1) +    
+                             y=datL$L*100, house=datL$house), aes(x=x, y=y), alpha = 1, color="lightblue3", shape=1, size=1) +    
   labs(x="Date", y=paste("Support for L", "(%)")) +
   theme_bw() +
   theme(axis.text = element_text(size = 9),
