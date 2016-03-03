@@ -64,15 +64,14 @@ xSD[i] ~ dnorm(xSD[i-1], phiSD)
 }
 
 ## priors
-omega ~ dgamma(1, 1)
-phiM <- 1/pow(omega,2)
-phiL <- 1/pow(omega,2)
-phiC <- 1/pow(omega,2)
-phiKD <- 1/pow(omega,2)
-phiS <- 1/pow(omega,2)
-phiMP <- 1/pow(omega,2)
-phiV <- 1/pow(omega,2)
-phiSD <- 1/pow(omega,2)
+phiM <- dgamma(10000, 1)
+phiL <- dgamma(10000, 1)
+phiC <- dgamma(10000, 1)
+phiKD <- dgamma(10000, 1)
+phiS <- dgamma(10000, 1)
+phiMP <- dgamma(10000, 1)
+phiV <- dgamma(10000, 1)
+phiSD <- dgamma(10000, 1)
 }
 '
 
@@ -118,7 +117,9 @@ datM$collectPeriodFrom.num = julian(datM$collectPeriodFrom,origin=orig.date) #da
 datM$collectPeriodTo.num = julian(datM$collectPeriodTo,origin=orig.date) #days since origin
 datM$fieldDate.num = floor((datM$collectPeriodFrom.num + datM$collectPeriodTo.num) / 2)
 datM$M = datM$M/100
-               
+ 
+library(rjags)
+              
 jags_M ='
 model{
                  
@@ -133,19 +134,19 @@ xM[i] ~ dnorm(xM[i-1],phiM)
 }
                  
 ## priors
-omega ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
-phiM <- 1/pow(omega,2)
+phiM ~ dgamma(800000, 1) ## hyperparameters in gamma affects the smoothness of the curve
 }
 '
 
-pM = (1 / (datM$M*(1-datM$M)/datM$n))
+pM = (1 / (datM$M*(1-datM$M)/datM$n)) #binomial
+#pM = (1 / (datM$M*(1-datM$M)*datM$n)) #multinomial
 data_M = list(M = datM$M, precM = pM, xM = c(0.2623,rep(NA,end.date - orig.date-1)),
               day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_M,con="kalman_M.bug")
                  
 system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
                  
-system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M" ), n.iter = 5000, n.thin = 100))
+system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M" ), n.iter = 3000, n.thin = 10))
 sumM = summary(outM)
 cred_intM = HPDinterval(outM[,760:length(sumM$statistics[,1])], 0.95)
 
@@ -177,8 +178,8 @@ xL[i] ~ dnorm(xL[i-1],phiL)
 }
 
 ## priors
-omega ~ dgamma(1, 1)
-phiL <- 1/pow(omega,2)
+phiL ~ dgamma(800000, 1)
+
 }
 '
 pL = (1 / (datL$L*(1-datL$L)/datL$n))
