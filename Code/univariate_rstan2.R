@@ -66,34 +66,3 @@ lapply(get_sampler_params(fitData_M, inc_warmup = TRUE), summary, digits = 2)
 #####
 hist(unlist(fitData_M@sim$samples[[1]][length(c(0.2623,rep(NA,end.date - orig.date-1)))]))
 #true values election night 0.2333
-
-####
-meanM = colMeans(samples_M$alphaM)
-plot(seq(as.Date('2006-09-17'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),meanM, type="l", ylim=c())
-plot(seq(as.Date('2006-09-17'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num],datM$M)
-library(coda)
-cred_intM = HPDinterval(mcmc(samples_M$alphaM), 0.95)
-
-df = data.frame(xM = meanM , low=cred_intM[,1]*100, high=cred_intM[,2]*100,
-                time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))))
-library(ggplot2)
-ggplot(df) +
-  aes(x = time, y = xM*100) +
-  geom_line(col="blue", alpha=1)  +
-  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="blue3") +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") 
-  ggtitle(paste("M")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
-                             y=datM$M*100, house=datM$house), aes(x=x, y=y), alpha = 1, color="blue", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for M", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-
-
-
