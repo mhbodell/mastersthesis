@@ -81,6 +81,32 @@ ggplot(df) +
         panel.grid.minor = element_blank())
 
 
+########## C ######
+library(ggplot2)
+plot(colMeans(samples_C$xCi), type="l")
+plot(datC$C, type="l")
+meanC = colMeans(samples_C$xCi)
+#meanM= meanM_rstan
+cred_intC = HPDinterval(mcmc(samples_C$xCi), 0.95)
+df = data.frame(xC = meanC , low=cred_intC[,1]*100, high=cred_intC[,2]*100,
+                time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.0788,rep(NA,end.date - orig.date-1)))))
+ggplot(df) +
+  aes(x = time, y = xC*100) +
+  geom_line(col="chartreuse3", alpha=1)  +
+  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="chartreuse3") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="chartreuse3") +
+  ggtitle(paste("C")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
+                                   length=length(c(0.0788,rep(NA,end.date - orig.date-1))))[datC$fieldDate.num], 
+                             y=datC$C*100, house=datC$house), aes(x=x, y=y), alpha = 1, color="chartreuse3", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for C", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
 ########## KD ######
 
 
@@ -108,3 +134,106 @@ ggplot(df) +
         legend.background = element_rect(fill = "white"),
         panel.grid.major = element_line(colour = "lightgrey"),
         panel.grid.minor = element_blank())
+
+#### plot S ####
+meanS = colMeans(samples_S$xSi)
+#meanM= meanM_rstan
+cred_intS = HPDinterval(mcmc(samples_S$xSi), 0.95)
+dfS = data.frame(xS = meanS , low=cred_intS[,1]*100, high=cred_intS[,2]*100,
+                 time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.3499,rep(NA,end.date - orig.date-1)))))
+ggplot(dfS) +
+  aes(x = time, y = xS*100) +
+  geom_line(col="red", alpha=1)  +
+  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="red") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill="red") +
+  ggtitle(paste("S")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
+                                   length=length(c(0.3499,rep(NA,end.date - orig.date-1))))[datS$fieldDate.num], 
+                             y=datS$S*100, house=datS$house), aes(x=x, y=y), alpha = 1, color="red", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for S", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "darkgrey"),
+        panel.grid.minor = element_blank())
+
+
+#### MP ####
+meanMP = colMeans(samples_MP$xMPi)
+#meanM= meanM_rstan
+cred_intMP = HPDinterval(mcmc(samples_MP$xMPi), 0.95)
+dfMP = data.frame(xMP = meanMP , low=cred_intMP[,1]*100, high=cred_intMP[,2]*100,
+                 time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.0524,rep(NA,end.date - orig.date-1)))))
+ggplot(dfMP) +
+  aes(x = time, y = xMP*100) +
+  geom_line(col="forestgreen", alpha=1)  +
+  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="forestgreen") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill="forestgreen") +
+  ggtitle(paste("MP")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
+                                   length=length(c(0.0524,rep(NA,end.date - orig.date-1))))[datMP$fieldDate.num], 
+                             y=datMP$MP*100, house=datMP$house), aes(x=x, y=y), alpha = 1, color="forestgreen", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for MP", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "darkgrey"),
+        panel.grid.minor = element_blank())
+
+
+
+###### V #####
+library(ggplot2)
+meanV = colMeans(samples_V$xVi)
+#meanM= meanM_rstan
+cred_intV = HPDinterval(mcmc(samples_V$xVi), 0.95)
+dfV = data.frame(xV = meanV , low=cred_intV[,1]*100, high=cred_intV[,2]*100,
+                  time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.0585,rep(NA,end.date - orig.date-1)))))
+
+ggplot(dfV) +
+  aes(x = time, y = xV*100) +
+  geom_line(col="darkred", alpha=1)  +
+  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="darkred") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill="darkred") +
+  ggtitle(paste("V")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
+                                   length=length(c(0.0585,rep(NA,end.date - orig.date-1))))[datV$fieldDate.num], 
+                             y=datV$V*100, house=datV$house), aes(x=x, y=y), alpha = 1, color="darkred", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for V", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "darkgrey"),
+        panel.grid.minor = element_blank())
+
+#### plot SD ####
+meanSD = colMeans(samples_SD$xSDi)
+#meanM= meanM_rstan
+cred_intSD = HPDinterval(mcmc(samples_SD$xSDi), 0.95)
+dfSD = data.frame(xSD = meanSD , low=cred_intSD[,1]*100, high=cred_intSD[,2]*100,
+                 time=seq(as.Date('2006-09-17'),by='days',length=length(c(0.0293,rep(NA,end.date - orig.date-1)))))
+
+ggplot(dfSD) +
+  aes(x = time, y = xSD*100) +
+  geom_line(col="skyblue3", alpha=1)  +
+  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="skyblue3") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill="skyblue3") +
+  ggtitle(paste("SD")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
+                                   length=length(c(0.0293,rep(NA,end.date - orig.date-1))))[datSD$fieldDate.num], 
+                             y=datSD$SD*100, house=datSD$house), aes(x=x, y=y), alpha = 1, color="skyblue3", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for SD", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "darkgrey"),
+        panel.grid.minor = element_blank())
+
+
+
+
+

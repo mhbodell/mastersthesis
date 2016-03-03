@@ -9,7 +9,7 @@ df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]
 ggplot(df) +
   aes(x = time, y = xM*100) +
   geom_line(col="blue", alpha=1)  +
-  #geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="blue3") +
+  geom_ribbon(aes(ymin=low2, ymax=high2), alpha=0.2, fill="red") +
   geom_ribbon(aes(ymin=low, ymax=high), alpha=0.3, fill="blue") +
   ggtitle(paste("M")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-17'),by='days',
@@ -22,6 +22,9 @@ ggplot(df) +
         legend.background = element_rect(fill = "white"),
         panel.grid.major = element_line(colour = "lightgrey"),
         panel.grid.minor = element_blank())
+
+
+
 
 #### plot L ####
 library(ggplot2)
