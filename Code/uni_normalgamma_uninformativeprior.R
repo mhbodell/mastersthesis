@@ -1,0 +1,739 @@
+################################################
+##### normal-gamma, non-imformative priors #####
+################################################
+
+############# M ###################
+
+library(rjags)
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
+
+datM = na.omit(polls[,c('M','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datM$house = factor(datM$house)
+datM = datM[order(datM$collectPeriodFrom),]
+datM$collectPeriodFrom = as.Date(datM$collectPeriodFrom)
+datM$collectPeriodTo = as.Date(datM$collectPeriodTo)
+datM$PublDate = as.Date(datM$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfM = data.frame(M=elec$M*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datM = rbind(datM, dfM)
+datM = datM[order(datM$collectPeriodFrom),]
+datM = datM[-which(datM$collectPeriodFrom>end.date),]
+datM = datM[-which(datM$collectPeriodFrom<orig.date),]
+
+datM$collectPeriodFrom.num = julian(datM$collectPeriodFrom,origin=orig.date) #days since origin
+datM$collectPeriodTo.num = julian(datM$collectPeriodTo,origin=orig.date) #days since origin
+datM$fieldDate.num = floor((datM$collectPeriodFrom.num + datM$collectPeriodTo.num) / 2)
+datM$M = datM$M/100
+
+jags_M ='
+model{
+
+#observed model
+for(i in 1:npolls){
+M[i] ~ dnorm(xM[day[i]],precM[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xM[i] ~ dnorm(xM[i-1],phiM)
+}
+
+## priors
+phiM ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pM = (1 / (datM$M*(1-datM$M)/datM$n)) #binomial
+#pM = (1 / (datM$M*(1-datM$M)*datM$n)) #multinomial
+data_M = list(M = datM$M, precM = pM, xM = c(rnorm(1,elec[2,1], 0.00001),rep(NA,end.date - orig.date-1)),
+              day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_M,con="kalman_M.bug")
+
+system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
+
+system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M"), n.iter = 3000, n.thin = 1))
+#system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
+sumM = summary(outM)
+cred_intM = HPDinterval(outM[,which(regexpr("xM", row.names(sumM$statistics))==1)], 0.95)
+#sumM$quantiles[elec.day[3],c(1,5)] 
+
+############ L ###############
+
+datL = na.omit(polls[,c('FP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+colnames(datL)[1] = "L"
+datL$house = factor(datL$house)
+datL = datL[order(datL$collectPeriodFrom),]
+datL$collectPeriodFrom = as.Date(datL$collectPeriodFrom)
+datL$collectPeriodTo = as.Date(datL$collectPeriodTo)
+datL$PublDate = as.Date(datL$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfL = data.frame(L=elec$L*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datL = rbind(datL, dfL)
+datL = datL[order(datL$collectPeriodFrom),]
+datL = datL[-which(datL$collectPeriodFrom>end.date),]
+datL = datL[-which(datL$collectPeriodFrom<orig.date),]
+
+datL$collectPeriodFrom.num = julian(datL$collectPeriodFrom,origin=orig.date) #days since origin
+datL$collectPeriodTo.num = julian(datL$collectPeriodTo,origin=orig.date) #days since origin
+datL$fieldDate.num = floor((datL$collectPeriodFrom.num + datL$collectPeriodTo.num) / 2)
+datL$L = datL$L/100
+
+jags_L ='
+model{
+
+#observed model
+for(i in 1:npolls){
+L[i] ~ dnorm(xL[day[i]],precL[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xL[i] ~ dnorm(xL[i-1],phiL)
+}
+
+## priors
+phiL ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pL = (1 / (datL$L*(1-datL$L)/datL$n)) #binomial
+#pL = (1 / (datL$L*(1-datL$L)*datL$n)) #multinomial
+data_L = list(L = datL$L, precL = pL, xL = c(rnorm(1,elec[2,2], 0.00001),rep(NA,end.date - orig.date-1)),
+              day = datL$fieldDate.num, npolls = nrow(datL), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_L,con="kalman_L.bug")
+
+system.time(jags_mod_L <- jags.model("kalman_L.bug", data = data_L))
+
+system.time(outL <- coda.samples(jags_mod_L,variable.names = c("xL", "L"), n.iter = 3000, n.thin = 1))
+#system.time(outL_jags <- jags.samples(jags_mod_L,variable.names = c("xL", "L","phiL" ), n.iter = 5000, n.thin = 10))
+sumL = summary(outL)
+cred_intL = HPDinterval(outL[,which(regexpr("xL", row.names(sumL$statistics))==1)], 0.95)
+#sumL$quantiles[elec.day[3],c(1,5)] 
+
+############ KD ###############
+
+datKD = na.omit(polls[,c('KD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datKD$house = factor(datKD$house)
+datKD = datKD[order(datKD$collectPeriodFrom),]
+datKD$collectPeriodFrom = as.Date(datKD$collectPeriodFrom)
+datKD$collectPeriodTo = as.Date(datKD$collectPeriodTo)
+datKD$PublDate = as.Date(datKD$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfKD = data.frame(KD=elec$KD*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datKD = rbind(datKD, dfKD)
+datKD = datKD[order(datKD$collectPeriodFrom),]
+datKD = datKD[-which(datKD$collectPeriodFrom>end.date),]
+datKD = datKD[-which(datKD$collectPeriodFro<orig.date),]
+
+datKD$collectPeriodFrom.num = julian(datKD$collectPeriodFrom,origin=orig.date) #days since origin
+datKD$collectPeriodTo.num = julian(datKD$collectPeriodTo,origin=orig.date) #days since origin
+datKD$fieldDate.num = floor((datKD$collectPeriodFrom.num + datKD$collectPeriodTo.num) / 2)
+datKD$KD = datKD$KD/100
+
+jags_KD ='
+model{
+
+#observed model
+for(i in 1:npolls){
+KD[i] ~ dnorm(xKD[day[i]],precKD[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xKD[i] ~ dnorm(xKD[i-1],phiKD)
+}
+
+## priors
+phiKD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pKD = (1 / (datKD$KD*(1-datKD$KD)/datKD$n)) #binomial
+#pKD = (1 / (datKD$KD*(1-datKD$KD)*datKD$n)) #multinomial
+data_KD = list(KD = datKD$KD, precKD = pKD, xKD = c(rnorm(1,elec[2,3], 0.00001),rep(NA,end.date - orig.date-1)),
+               day = datKD$fieldDate.num, npolls = nrow(datKD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_KD,con="kalman_KD.bug")
+
+system.time(jags_mod_KD <- jags.model("kalman_KD.bug", data = data_KD))
+
+system.time(outKD <- coda.samples(jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = 3000, n.thin = 1))
+#system.time(outKD_jags <- jags.samples(jags_mod_KD,variable.names = c("xKD", "KD","phiKD" ), n.iter = 5000, n.thin = 10))
+sumKD = summary(outKD)
+cred_intKD = HPDinterval(outKD[,which(regexpr("xKD", row.names(sumKD$statistics))==1)], 0.95)
+#sumKD$quantiles[elec.day[3],c(1,5)] 
+
+############ C ###############
+datC = na.omit(polls[,c('C','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datC$house = factor(datC$house)
+datC = datC[order(datC$collectPeriodFrom),]
+datC$collectPeriodFrom = as.Date(datC$collectPeriodFrom)
+datC$collectPeriodTo = as.Date(datC$collectPeriodTo)
+datC$PublDate = as.Date(datC$PublDate)
+orig.date = as.Date("2006-09-161") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistiCatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfC = data.frame(C=elec$C*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datC = rbind(datC, dfC)
+datC = datC[order(datC$collectPeriodFrom),]
+datC = datC[-which(datC$collectPeriodFrom>end.date),]
+datC = datC[-which(datC$collectPeriodFrom<orig.date),]
+
+datC$collectPeriodFrom.num = julian(datC$collectPeriodFrom,origin=orig.date) #days since origin
+datC$collectPeriodTo.num = julian(datC$collectPeriodTo,origin=orig.date) #days since origin
+datC$fieldDate.num = floor((datC$collectPeriodFrom.num + datC$collectPeriodTo.num) / 2)
+datC$C = datC$C/100
+
+jags_C ='
+model{
+
+#observed model
+for(i in 1:npolls){
+C[i] ~ dnorm(xC[day[i]],precC[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xC[i] ~ dnorm(xC[i-1],phiC)
+}
+
+## priors
+phiC ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pC = (1 / (datC$C*(1-datC$C)/datC$n)) #binomial
+#pC = (1 / (datC$C*(1-datC$C)*datC$n)) #multinomial
+data_C = list(C = datC$C, precC = pC, xC = c(rnorm(1,elec[2,4], 0.00001),rep(NA,end.date - orig.date-1)),
+              day = datC$fieldDate.num, npolls = nrow(datC), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_C,con="kalman_C.bug")
+
+system.time(jags_mod_C <- jags.model("kalman_C.bug", data = data_C))
+
+system.time(outC <- coda.samples(jags_mod_C,variable.names = c("xC", "C"), n.iter = 3000, n.thin = 1))
+#system.time(outC_jags <- jags.samples(jags_mod_C,variable.names = c("xC", "C","phiC" ), n.iter = 5000, n.thin = 10))
+sumC = summary(outC)
+cred_intC = HPDinterval(outC[,which(regexpr("xC", row.names(sumC$statistics))==1)], 0.95)
+#sumC$quantiles[elec.day[3],c(1,5)] 
+
+############ S ###############
+
+datS = na.omit(polls[,c('S','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datS$house = factor(datS$house)
+datS = datS[order(datS$collectPeriodFrom),]
+datS$collectPeriodFrom = as.Date(datS$collectPeriodFrom)
+datS$collectPeriodTo = as.Date(datS$collectPeriodTo)
+datS$PublDate = as.Date(datS$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistiSatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfS = data.frame(S=elec$S*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datS = rbind(datS, dfS)
+datS = datS[order(datS$collectPeriodFrom),]
+datS = datS[-which(datS$collectPeriodFrom>end.date),]
+datS = datS[-which(datS$collectPeriodFrom<orig.date),]
+
+datS$collectPeriodFrom.num = julian(datS$collectPeriodFrom,origin=orig.date) #days since origin
+datS$collectPeriodTo.num = julian(datS$collectPeriodTo,origin=orig.date) #days since origin
+datS$fieldDate.num = floor((datS$collectPeriodFrom.num + datS$collectPeriodTo.num) / 2)
+datS$S = datS$S/100
+
+jags_S ='
+model{
+
+#observed model
+for(i in 1:npolls){
+S[i] ~ dnorm(xS[day[i]],precS[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xS[i] ~ dnorm(xS[i-1],phiS)
+}
+
+## priors
+phiS ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pS = (1 / (datS$S*(1-datS$S)/datS$n)) #binomial
+#pS = (1 / (datS$S*(1-datS$S)*datS$n)) #multinomial
+data_S = list(S = datS$S, precS = pS, xS = c(rnorm(1,elec[2,5], 0.00001),rep(NA,end.date - orig.date-1)),
+              day = datS$fieldDate.num, npolls = nrow(datS), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_S,con="kalman_S.bug")
+
+system.time(jags_mod_S <- jags.model("kalman_S.bug", data = data_S))
+
+system.time(outS <- coda.samples(jags_mod_S,variable.names = c("xS", "S"), n.iter = 3000, n.thin = 1))
+#system.time(outS_jags <- jags.samples(jags_mod_S,variable.names = c("xS", "S","phiS" ), n.iter = 5000, n.thin = 10))
+sumS = summary(outS)
+cred_intS = HPDinterval(outS[,which(regexpr("xS", row.names(sumS$statistics))==1)], 0.95)
+#sumS$quantiles[elec.day[3],c(1,5)] 
+
+############ MP ###############
+
+datMP = na.omit(polls[,c('MP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datMP$house = factor(datMP$house)
+datMP = datMP[order(datMP$collectPeriodFrom),]
+datMP$collectPeriodFrom = as.Date(datMP$collectPeriodFrom)
+datMP$collectPeriodTo = as.Date(datMP$collectPeriodTo)
+datMP$PublDate = as.Date(datMP$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistiMPatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfMP = data.frame(MP=elec$MP*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datMP = rbind(datMP, dfMP)
+datMP = datMP[order(datMP$collectPeriodFrom),]
+datMP = datMP[-which(datMP$collectPeriodFrom>end.date),]
+datMP = datMP[-which(datMP$collectPeriodFrom<orig.date),]
+
+datMP$collectPeriodFrom.num = julian(datMP$collectPeriodFrom,origin=orig.date) #days since origin
+datMP$collectPeriodTo.num = julian(datMP$collectPeriodTo,origin=orig.date) #days since origin
+datMP$fieldDate.num = floor((datMP$collectPeriodFrom.num + datMP$collectPeriodTo.num) / 2)
+datMP$MP = datMP$MP/100
+
+jags_MP ='
+model{
+
+#observed model
+for(i in 1:npolls){
+MP[i] ~ dnorm(xMP[day[i]],precMP[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xMP[i] ~ dnorm(xMP[i-1],phiMP)
+}
+
+## priors
+phiMP ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pMP = (1 / (datMP$MP*(1-datMP$MP)/datMP$n)) #binomial
+#pMP = (1 / (datMP$MP*(1-datMP$MP)*datMP$n)) #multinomial
+data_MP = list(MP = datMP$MP, precMP = pMP, xMP = c(rnorm(1,elec[2,6], 0.00001),rep(NA,end.date - orig.date-1)),
+               day = datMP$fieldDate.num, npolls = nrow(datMP), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_MP,con="kalman_MP.bug")
+
+system.time(jags_mod_MP <- jags.model("kalman_MP.bug", data = data_MP))
+
+system.time(outMP <- coda.samples(jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = 3000, n.thin = 1))
+#system.time(outMP_jags <- jags.samples(jags_mod_MP,variable.names = c("xMP", "MP","phiMP" ), n.iter = 5000, n.thin = 10))
+sumMP = summary(outMP)
+cred_intMP = HPDinterval(outMP[,which(regexpr("xMP", row.names(sumMP$statistics))==1)], 0.95)
+#sumMP$quantiles[elec.day[3],c(1,5)] 
+
+############ V ###############
+
+datV = na.omit(polls[,c('V','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datV$house = factor(datV$house)
+datV = datV[order(datV$collectPeriodFrom),]
+datV$collectPeriodFrom = as.Date(datV$collectPeriodFrom)
+datV$collectPeriodTo = as.Date(datV$collectPeriodTo)
+datV$PublDate = as.Date(datV$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistiVatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfV = data.frame(V=elec$V*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datV = rbind(datV, dfV)
+datV = datV[order(datV$collectPeriodFrom),]
+datV = datV[-which(datV$collectPeriodFrom>end.date),]
+datV = datV[-which(datV$collectPeriodFrom<orig.date),]
+
+datV$collectPeriodFrom.num = julian(datV$collectPeriodFrom,origin=orig.date) #days since origin
+datV$collectPeriodTo.num = julian(datV$collectPeriodTo,origin=orig.date) #days since origin
+datV$fieldDate.num = floor((datV$collectPeriodFrom.num + datV$collectPeriodTo.num) / 2)
+datV$V = datV$V/100
+
+jags_V ='
+model{
+
+#observed model
+for(i in 1:npolls){
+V[i] ~ dnorm(xV[day[i]],precV[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xV[i] ~ dnorm(xV[i-1],phiV)
+}
+
+## priors
+phiV ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pV = (1 / (datV$V*(1-datV$V)/datV$n)) #binomial
+#pV = (1 / (datV$V*(1-datV$V)*datV$n)) #multinomial
+data_V = list(V = datV$V, precV = pV, xV = c(rnorm(1,elec[2,7], 0.00001),rep(NA,end.date - orig.date-1)),
+              day = datV$fieldDate.num, npolls = nrow(datV), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_V,con="kalman_V.bug")
+
+system.time(jags_mod_V <- jags.model("kalman_V.bug", data = data_V))
+
+system.time(outV <- coda.samples(jags_mod_V,variable.names = c("xV", "V"), n.iter = 3000, n.thin = 1))
+#system.time(outV_jags <- jags.samples(jags_mod_V,variable.names = c("xV", "V","phiV" ), n.iter = 5000, n.thin = 10))
+sumV = summary(outV)
+cred_intV = HPDinterval(outV[,which(regexpr("xV", row.names(sumV$statistics))==1)], 0.95)
+#sumV$quantiles[elec.day[3],c(1,5)] 
+
+############ SD ###############
+
+datSD = na.omit(polls[,c('SD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datSD$house = factor(datSD$house)
+datSD = datSD[order(datSD$collectPeriodFrom),]
+datSD$collectPeriodFrom = as.Date(datSD$collectPeriodFrom)
+datSD$collectPeriodTo = as.Date(datSD$collectPeriodTo)
+datSD$PublDate = as.Date(datSD$PublDate)
+orig.date = as.Date("2006-09-16") #day before election 2006
+end.date = as.Date('2014-09-14') #election day 2014
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2012")
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+## http://www.statistiSDatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfSD = data.frame(SD=elec$SD*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datSD = rbind(datSD, dfSD)
+datSD = datSD[order(datSD$collectPeriodFrom),]
+datSD = datSD[-which(datSD$collectPeriodFrom>end.date),]
+datSD = datSD[-which(datSD$collectPeriodFrom<orig.date),]
+
+datSD$collectPeriodFrom.num = julian(datSD$collectPeriodFrom,origin=orig.date) #days since origin
+datSD$collectPeriodTo.num = julian(datSD$collectPeriodTo,origin=orig.date) #days since origin
+datSD$fieldDate.num = floor((datSD$collectPeriodFrom.num + datSD$collectPeriodTo.num) / 2)
+datSD$SD = datSD$SD/100
+
+jags_SD ='
+model{
+
+#observed model
+for(i in 1:npolls){
+SD[i] ~ dnorm(xSD[day[i]],precSD[i])
+}
+
+#dynamic model 
+for(i in 2:nperiods){
+xSD[i] ~ dnorm(xSD[i-1],phiSD)
+}
+
+## priors
+phiSD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+}
+'
+
+pSD = (1 / (datSD$SD*(1-datSD$SD)/datSD$n)) #binomial
+#pSD = (1 / (datSD$SD*(1-datSD$SD)*datSD$n)) #multinomial
+data_SD = list(SD = datSD$SD, precSD = pSD, xSD = c(rnorm(1,elec[2,8], 0.00001),rep(NA,end.date - orig.date-1)),
+               day = datSD$fieldDate.num, npolls = nrow(datSD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_SD,con="kalman_SD.bug")
+
+system.time(jags_mod_SD <- jags.model("kalman_SD.bug", data = data_SD))
+
+system.time(outSD <- coda.samples(jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = 3000, n.thin = 1))
+#system.time(outSD_jags <- jags.samples(jags_mod_SD,variable.names = c("xSD", "SD","phiSD" ), n.iter = 5000, n.thin = 10))
+sumSD = summary(outSD)
+cred_intSD = HPDinterval(outSD[,which(regexpr("xSD", row.names(sumSD$statistics))==1)], 0.95)
+#sumSD$quantiles[elec.day[3],c(1,5)] 
+
+#################################################
+##################### PLOTS #####################
+#################################################
+#orig.date = as.Date("2002-09-11") #day before election 2011
+#end.date = as.Date('2014-09-14') #election day 2014
+
+#### plots M #####
+
+library(ggplot2)
+meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1]
+low2 = (meanM - 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),2])*100
+high2 = (meanM + 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),2])*100
+df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xM*100) +
+  geom_line(col="blue", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") + 
+  ggtitle(paste("M")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
+                             y=datM$M*100, house=datM$house), aes(x=x, y=y), alpha = 1, color="blue", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for M", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+#### plots L #####
+
+library(ggplot2)
+meanL = sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),1]
+low2 = (meanL - 1.96 * sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),2])*100
+high2 = (meanL + 1.96 * sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),2])*100
+df = data.frame(xL = meanL , low=cred_intL[[1]][,1]*100, high=cred_intL[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xL*100) +
+  geom_line(col="lightblue3", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="lightblue3") +
+  ggtitle(paste("L")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datL$fieldDate.num], 
+                             y=datL$L*100, house=datL$house), aes(x=x, y=y), alpha = 1, color="lightblue3", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for L", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+
+
+#### plots KD #####
+
+library(ggplot2)
+meanKD = sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),1]
+low2 = (meanKD - 1.96 * sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),2])*100
+high2 = (meanKD + 1.96 * sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),2])*100
+df = data.frame(xKD = meanKD , low=cred_intKD[[1]][,1]*100, high=cred_intKD[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xKD*100) +
+  geom_line(col="darkblue", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkblue") +
+  ggtitle(paste("KD")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datKD$fieldDate.num], 
+                             y=datKD$KD*100, house=datKD$house), aes(x=x, y=y), alpha = 1, color="darkblue", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for KD", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+
+#### plots C #####
+
+library(ggplot2)
+meanC = sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),1]
+low2 = (meanC - 1.96 * sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),2])*100
+high2 = (meanC + 1.96 * sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),2])*100
+df = data.frame(xC = meanC , low=cred_intC[[1]][,1]*100, high=cred_intC[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xC*100) +
+  geom_line(col="chartreuse3", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="chartreuse3") +
+  ggtitle(paste("C")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datC$fieldDate.num], 
+                             y=datC$C*100, house=datC$house), aes(x=x, y=y), alpha = 1, color="chartreuse3", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for C", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+
+#### plots S #####
+
+library(ggplot2)
+meanS = sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),1]
+low2 = (meanS - 1.96 * sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),2])*100
+high2 = (meanS + 1.96 * sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),2])*100
+df = data.frame(xS = meanS , low=cred_intS[[1]][,1]*100, high=cred_intS[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xS*100) +
+  geom_line(col="red", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="red") +
+  ggtitle(paste("S")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datS$fieldDate.num], 
+                             y=datS$S*100, house=datS$house), aes(x=x, y=y), alpha = 1, color="red", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for S", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+
+#### plots MP #####
+
+library(ggplot2)
+meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),1]
+low2 = (meanMP - 1.96 * sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),2])*100
+high2 = (meanMP + 1.96 * sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),2])*100
+df = data.frame(xMP = meanMP , low=cred_intMP[[1]][,1]*100, high=cred_intMP[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xMP*100) +
+  geom_line(col="forestgreen", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="forestgreen") +
+  ggtitle(paste("MP")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datMP$fieldDate.num], 
+                             y=datMP$MP*100, house=datMP$house), aes(x=x, y=y), alpha = 1, color="forestgreen", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for MP", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+#### plots V #####
+
+library(ggplot2)
+meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1]
+low2 = (meanV - 1.96 * sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),2])*100
+high2 = (meanV + 1.96 * sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),2])*100
+df = data.frame(xV = meanV , low=cred_intV[[1]][,1]*100, high=cred_intV[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xV*100) +
+  geom_line(col="darkred", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkred") +
+  ggtitle(paste("V")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datV$fieldDate.num], 
+                             y=datV$V*100, house=datV$house), aes(x=x, y=y), alpha = 1, color="darkred", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for V", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+
+#### plots SD #####
+
+library(ggplot2)
+meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
+low2 = (meanSD - 1.96 * sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),2])*100
+high2 = (meanSD + 1.96 * sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),2])*100
+df = data.frame(xSD = meanSD , low=cred_intSD[[1]][,1]*100, high=cred_intSD[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
+                low2=low2, high2=high2)
+ggplot(df) +
+  aes(x = time, y = xSD*100) +
+  geom_line(col="skyblue3", alpha=1)  +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="skyblue3") +
+  ggtitle(paste("SD")) +
+  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
+                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datSD$fieldDate.num], 
+                             y=datSD$SD*100, house=datSD$house), aes(x=x, y=y), alpha = 1, color="skyblue3", shape=1, size=1) +    
+  labs(x="Date", y=paste("Support for SD", "(%)")) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 9),
+        legend.key = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"),
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.grid.minor = element_blank())
+
+
+
+
+
+
+
+
