@@ -1,6 +1,7 @@
 ################################################
 ##### normal-gamma, non-imformative priors #####
 ################################################
+ninter=3000
 
 ############# M ###################
 
@@ -64,7 +65,7 @@ writeLines(jags_M,con="kalman_M.bug")
 
 system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
 
-system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M"), n.iter = 3000, n.thin = 1))
+system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 1))
 #system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
 sumM = summary(outM)
 cred_intM = HPDinterval(outM[,which(regexpr("xM", row.names(sumM$statistics))==1)], 0.95)
@@ -129,7 +130,7 @@ writeLines(jags_L,con="kalman_L.bug")
 
 system.time(jags_mod_L <- jags.model("kalman_L.bug", data = data_L))
 
-system.time(outL <- coda.samples(jags_mod_L,variable.names = c("xL", "L"), n.iter = 3000, n.thin = 1))
+system.time(outL <- coda.samples(jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, n.thin = 1))
 #system.time(outL_jags <- jags.samples(jags_mod_L,variable.names = c("xL", "L","phiL" ), n.iter = 5000, n.thin = 10))
 sumL = summary(outL)
 cred_intL = HPDinterval(outL[,which(regexpr("xL", row.names(sumL$statistics))==1)], 0.95)
@@ -193,7 +194,7 @@ writeLines(jags_KD,con="kalman_KD.bug")
 
 system.time(jags_mod_KD <- jags.model("kalman_KD.bug", data = data_KD))
 
-system.time(outKD <- coda.samples(jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = 3000, n.thin = 1))
+system.time(outKD <- coda.samples(jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, n.thin = 1))
 #system.time(outKD_jags <- jags.samples(jags_mod_KD,variable.names = c("xKD", "KD","phiKD" ), n.iter = 5000, n.thin = 10))
 sumKD = summary(outKD)
 cred_intKD = HPDinterval(outKD[,which(regexpr("xKD", row.names(sumKD$statistics))==1)], 0.95)
@@ -256,7 +257,7 @@ writeLines(jags_C,con="kalman_C.bug")
 
 system.time(jags_mod_C <- jags.model("kalman_C.bug", data = data_C))
 
-system.time(outC <- coda.samples(jags_mod_C,variable.names = c("xC", "C"), n.iter = 3000, n.thin = 1))
+system.time(outC <- coda.samples(jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, n.thin = 1))
 #system.time(outC_jags <- jags.samples(jags_mod_C,variable.names = c("xC", "C","phiC" ), n.iter = 5000, n.thin = 10))
 sumC = summary(outC)
 cred_intC = HPDinterval(outC[,which(regexpr("xC", row.names(sumC$statistics))==1)], 0.95)
@@ -320,7 +321,7 @@ writeLines(jags_S,con="kalman_S.bug")
 
 system.time(jags_mod_S <- jags.model("kalman_S.bug", data = data_S))
 
-system.time(outS <- coda.samples(jags_mod_S,variable.names = c("xS", "S"), n.iter = 3000, n.thin = 1))
+system.time(outS <- coda.samples(jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, n.thin = 1))
 #system.time(outS_jags <- jags.samples(jags_mod_S,variable.names = c("xS", "S","phiS" ), n.iter = 5000, n.thin = 10))
 sumS = summary(outS)
 cred_intS = HPDinterval(outS[,which(regexpr("xS", row.names(sumS$statistics))==1)], 0.95)
@@ -384,7 +385,7 @@ writeLines(jags_MP,con="kalman_MP.bug")
 
 system.time(jags_mod_MP <- jags.model("kalman_MP.bug", data = data_MP))
 
-system.time(outMP <- coda.samples(jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = 3000, n.thin = 1))
+system.time(outMP <- coda.samples(jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, n.thin = 1))
 #system.time(outMP_jags <- jags.samples(jags_mod_MP,variable.names = c("xMP", "MP","phiMP" ), n.iter = 5000, n.thin = 10))
 sumMP = summary(outMP)
 cred_intMP = HPDinterval(outMP[,which(regexpr("xMP", row.names(sumMP$statistics))==1)], 0.95)
@@ -448,7 +449,7 @@ writeLines(jags_V,con="kalman_V.bug")
 
 system.time(jags_mod_V <- jags.model("kalman_V.bug", data = data_V))
 
-system.time(outV <- coda.samples(jags_mod_V,variable.names = c("xV", "V"), n.iter = 3000, n.thin = 1))
+system.time(outV <- coda.samples(jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, n.thin = 1))
 #system.time(outV_jags <- jags.samples(jags_mod_V,variable.names = c("xV", "V","phiV" ), n.iter = 5000, n.thin = 10))
 sumV = summary(outV)
 cred_intV = HPDinterval(outV[,which(regexpr("xV", row.names(sumV$statistics))==1)], 0.95)
@@ -512,11 +513,229 @@ writeLines(jags_SD,con="kalman_SD.bug")
 
 system.time(jags_mod_SD <- jags.model("kalman_SD.bug", data = data_SD))
 
-system.time(outSD <- coda.samples(jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = 3000, n.thin = 1))
+system.time(outSD <- coda.samples(jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, n.thin = 1))
 #system.time(outSD_jags <- jags.samples(jags_mod_SD,variable.names = c("xSD", "SD","phiSD" ), n.iter = 5000, n.thin = 10))
 sumSD = summary(outSD)
 cred_intSD = HPDinterval(outSD[,which(regexpr("xSD", row.names(sumSD$statistics))==1)], 0.95)
 #sumSD$quantiles[elec.day[3],c(1,5)] 
+
+#########################################################
+################# model evaluation ######################
+#########################################################
+meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1]
+meanL = sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),1]
+meanKD = sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),1]
+meanC = sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),1]
+meanS = sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),1]
+meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),1]
+meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1]
+meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
+
+rsimM = outM[sample(1:ninter,1),]
+rsimL = outL[sample(1:ninter,1),]
+rsimKD = outKD[sample(1:ninter,1),]
+rsimC = outC[sample(1:ninter,1),]
+rsimS = outS[sample(1:ninter,1),]
+rsimMP = outMP[sample(1:ninter,1),]
+rsimV = outV[sample(1:ninter,1),]
+rsimSD = outSD[sample(1:ninter,1),]
+
+
+
+###### resiudals - posterior distribution #####
+
+resM = datM$M-rsimM[[1]][which(regexpr("xM", row.names(sumM$statistics))==1)][datM$fieldDate.num]
+resL = datL$L-rsimL[[1]][which(regexpr("xL", row.names(sumL$statistics))==1)][datL$fieldDate.num]
+resKD = datKD$KD-rsimKD[[1]][which(regexpr("xKD", row.names(sumKD$statistics))==1)][datKD$fieldDate.num]
+resC = datC$C-rsimC[[1]][which(regexpr("xC", row.names(sumC$statistics))==1)][datC$fieldDate.num]
+resS = datS$S-rsimS[[1]][which(regexpr("xS", row.names(sumS$statistics))==1)][datS$fieldDate.num]
+resMP = datMP$MP-rsimMP[[1]][which(regexpr("xMP", row.names(sumMP$statistics))==1)][datMP$fieldDate.num]
+resV = datV$V-rsimV[[1]][which(regexpr("xV", row.names(sumV$statistics))==1)][datV$fieldDate.num]
+resSD = datSD$SD-rsimSD[[1]][which(regexpr("xSD", row.names(sumSD$statistics))==1)][datSD$fieldDate.num]
+
+
+####### y^rep #####
+yrepM = sapply(1:nrow(datM), function(s) rnorm(10000,rsimM[[1]][datM$fieldDate.num][s], 1/pM[s] ))
+yrepL = sapply(1:nrow(datL), function(s) rnorm(10000,rsimL[[1]][datL$fieldDate.num][s], 1/pL[s] ))
+yrepKD = sapply(1:nrow(datKD), function(s) rnorm(10000,rsimKD[[1]][datKD$fieldDate.num][s], 1/pKD[s] ))
+yrepC = sapply(1:nrow(datC), function(s) rnorm(10000,rsimC[[1]][datC$fieldDate.num][s], 1/pC[s] ))
+yrepS = sapply(1:nrow(datS), function(s) rnorm(10000,rsimS[[1]][datS$fieldDate.num][s], 1/pS[s] ))
+yrepMP = sapply(1:nrow(datMP), function(s) rnorm(10000,rsimMP[[1]][datMP$fieldDate.num][s], 1/pMP[s] ))
+yrepV = sapply(1:nrow(datV), function(s) rnorm(10000,rsimV[[1]][datV$fieldDate.num][s], 1/pV[s] ))
+yrepSD = sapply(1:nrow(datSD), function(s) rnorm(10000,rsimSD[[1]][datSD$fieldDate.num][s], 1/pSD[s] ))
+
+####### y^rep min ##### 
+
+par(mfrow=c(3,3))
+min_repM = apply(yrepM,2,min)
+min_M = min(datM$M)
+hist(min_repM, main="M", col="blue", xlab="Minimum value in replicated data", las=1)
+abline(v=min_M, lty=1, lwd=2)
+sum(ifelse(min_repM>min_M,1,0))/length(datM$M) 
+
+min_repL = apply(yrepL,2,min)
+min_L = min(datL$L)
+hist(min_repL, main="L", col="lightblue3", xlab="Minimum value in replicated data", las=1)
+abline(v=min_L, lty=1, lwd=2)
+sum(ifelse(min_repL>min_L,1,0))/length(datL$L) 
+
+min_repKD = apply(yrepKD,2,min)
+min_KD = min(datKD$KD)
+hist(min_repKD, main="KD", col="darkblue", xlab="Minimum value in replicated data", las=1)
+abline(v=min_KD, lty=1, lwd=2)
+sum(ifelse(min_repKD>min_KD,1,0))/length(datKD$KD) 
+
+min_repC = apply(yrepC,2,min)
+min_C = min(datC$C)
+hist(min_repC, main="C", col="chartreuse3", xlab="Minimum value in replicated data", las=1)
+abline(v=min_C, lty=1, lwd=2)
+sum(ifelse(min_repC>min_C,1,0))/length(datC$C) 
+
+min_repS = apply(yrepS,2,min)
+min_S = min(datS$S)
+hist(min_repS, main="S", col="red", xlab="Minimum value in replicated data", las=1)
+abline(v=min_S, lty=1, lwd=2)
+sum(ifelse(min_repS>min_S,1,0))/length(datS$S) 
+
+min_repMP = apply(yrepMP,2,min)
+min_MP = min(datMP$MP)
+hist(min_repMP, main="MP", col="forestgreen", xlab="Minimum value in replicated data", las=1)
+abline(v=min_MP, lty=1, lwd=2)
+sum(ifelse(min_repMP>min_MP,1,0))/length(datMP$MP) 
+
+min_repV = apply(yrepV,2,min)
+min_V = min(datV$V)
+hist(min_repV, main="V", col="darkred", xlab="Minimum value in replicated data", las=1)
+abline(v=min_V, lty=1, lwd=2)
+sum(ifelse(min_repV>min_V,1,0))/length(datV$V) 
+
+
+min_repSD = apply(yrepSD,2,min)
+min_SD = min(datSD$SD)
+hist(min_repSD, main="SD", col="skyblue3", xlab="Minimum value in replicated data", las=1)
+abline(v=min_SD, lty=1, lwd=2)
+sum(ifelse(min_repSD>min_SD,1,0))/length(datSD$SD) 
+par(mfrow=c(1,1))
+
+####### y^rep max ##### 
+par(mfrow=c(3,3))
+max_repM = apply(yrepM,2,max)
+max_M = max(datM$M)
+hist(max_repM, main="M", col="blue", xlab="Maximum value in replicated data", las=1)
+abline(v=max_M, lty=1, lwd=2)
+sum(ifelse(max_repM<max_M,1,0))/length(datM$M) 
+
+max_repL = apply(yrepL,2,max)
+max_L = max(datL$L)
+hist(max_repL, main="L", col="lightblue3", xlab="Maximum observation in replicated data", las=1)
+abline(v=max_L, lty=1, lwd=2)
+sum(ifelse(max_repL<max_L,1,0))/length(datL$L) 
+
+max_repKD = apply(yrepKD,2,max)
+max_KD = max(datKD$KD)
+hist(max_repKD, main="KD", col="darkblue", xlab="Maximum observation in replicated data", las=1)
+abline(v=max_KD, lty=1, lwd=2)
+sum(ifelse(max_repKD<max_KD,1,0))/length(datKD$KD) 
+
+max_repC = apply(yrepC,2,max)
+max_C = max(datC$C)
+hist(max_repC, main="C", col="chartreuse3", xlab="Maximum observation in replicated data", las=1)
+abline(v=max_C, lty=1, lwd=2)
+sum(ifelse(max_repC<max_C,1,0))/length(datC$C) 
+
+max_repS = apply(yrepS,2,max)
+max_S = max(datS$S)
+hist(max_repS, main="S", col="red", xlab="Maximum value in replicated data", las=1)
+abline(v=max_S, lty=1, lwd=2)
+sum(ifelse(max_repS<max_S,1,0))/length(datS$S) 
+
+max_repMP = apply(yrepMP,2,max)
+max_MP = max(datMP$MP)
+hist(max_repMP, main="MP", col="forestgreen", xlab="Maximum value in replicated data", las=1)
+abline(v=max_MP, lty=1, lwd=2)
+sum(ifelse(max_repMP<max_MP,1,0))/length(datMP$MP) 
+
+max_repV = apply(yrepV,2,max)
+max_V = max(datV$V)
+hist(max_repV, main="V", col="darkred", xlab="Maximum value in replicated data", las=1)
+abline(v=max_V, lty=1, lwd=2)
+sum(ifelse(max_repV<max_V,1,0))/length(datV$V) 
+
+max_repSD = apply(yrepSD,2,max)
+max_SD = max(datSD$SD)
+hist(max_repSD, main="SD", col="skyblue3", xlab="Maximum observation in replicated data", las=1)
+abline(v=max_SD, lty=1, lwd=2)
+sum(ifelse(max_repSD<max_SD,1,0))/length(datSD$SD) 
+par(mfrow=c(1,1))
+
+####### y^rep mean #########
+
+par(mfrow=c(3,3))
+mean_repM = apply(yrepM,2,mean)
+mean_M = mean(datM$M)
+hist(mean_repM, main="Histogram of mean replicated M proportion", col="blue", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_M, lty=1, lwd=2)
+sum(ifelse(mean_repM<mean_M,1,0))/length(datM$M) 
+
+mean_repL = apply(yrepL,2,mean)
+mean_L = mean(datL$L)
+hist(mean_repL, main="Histogram of mean replicated L proportion", col="lightblue3", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_L, lty=1, lwd=2)
+sum(ifelse(mean_repL<mean_L,1,0))/length(datL$L) 
+
+mean_repKD = apply(yrepKD,2,mean)
+mean_KD = mean(datKD$KD)
+hist(mean_repKD, main="Histogram of mean replicated KD proportion", col="darkblue", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_KD, lty=1, lwd=2)
+sum(ifelse(mean_repKD<mean_KD,1,0))/length(datKD$KD) 
+
+mean_repC = apply(yrepC,2,mean)
+mean_C = mean(datC$C)
+hist(mean_repC, main="Histogram of mean replicated C proportion", col="chartreuse3", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_C, lty=1, lwd=2)
+sum(ifelse(mean_repC<mean_C,1,0))/length(datC$C) 
+
+mean_repS = apply(yrepS,2,mean)
+mean_S = mean(datS$S)
+hist(mean_repS, main="Histogram of mean replicated S proportion", col="red", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_S, lty=1, lwd=2)
+sum(ifelse(mean_repS<mean_S,1,0))/length(datS$S) 
+
+mean_repMP = apply(yrepMP,2,mean)
+mean_MP = mean(datMP$MP)
+hist(mean_repMP, main="Histogram of mean replicated MP proportion", col="forestgreen", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_MP, lty=1, lwd=2)
+sum(ifelse(mean_repMP<mean_MP,1,0))/length(datMP$MP) 
+
+mean_repV = apply(yrepV,2,mean)
+mean_V = mean(datV$V)
+hist(mean_repV, main="Histogram of mean replicated V proportion", col="darkred", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_V, lty=1, lwd=2)
+sum(ifelse(mean_repV<mean_V,1,0))/length(datV$V) 
+
+mean_repSD = apply(yrepSD,2,mean)
+mean_SD = mean(datSD$SD)
+hist(mean_repSD, main="Histogram of mean replicated SD proportion", col="skyblue3", xlab="Mean value of observation in replicated data", las=1)
+abline(v=mean_SD, lty=1, lwd=2)
+sum(ifelse(mean_repSD<mean_SD,1,0))/length(datSD$SD) 
+par(mfrow=c(1,1))
+
+
+####### y^rep mean vs y plot ######
+par(mfrow=c(1,2))
+plot(datM$M*100, apply(yrep,2,mean)*100, xlab="Observed y", ylab="Expected y", main="Basic model", las=1, col="blue3")
+abline(a=0, b=1)
+plot(datM$M*100, apply(yrep_house,2,mean)*100, xlab="Observed y", ylab="Expected y", main="Basic + house model" ,las=1, col="blue3")
+abline(a=0, b=1)
+par(mfrow=c(1,1))
+
+
+####### y^rep mean vs y plot ######
+
+
+
+
+
 
 #################################################
 ##################### PLOTS #####################
@@ -536,7 +755,7 @@ df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]
 ggplot(df) +
   aes(x = time, y = xM*100) +
   geom_line(col="blue", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") + 
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") + 
   ggtitle(paste("M")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
@@ -561,7 +780,7 @@ df = data.frame(xL = meanL , low=cred_intL[[1]][,1]*100, high=cred_intL[[1]][,2]
 ggplot(df) +
   aes(x = time, y = xL*100) +
   geom_line(col="lightblue3", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="lightblue3") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="lightblue3") +
   ggtitle(paste("L")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datL$fieldDate.num], 
@@ -588,7 +807,7 @@ df = data.frame(xKD = meanKD , low=cred_intKD[[1]][,1]*100, high=cred_intKD[[1]]
 ggplot(df) +
   aes(x = time, y = xKD*100) +
   geom_line(col="darkblue", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkblue") +
+ # geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkblue") +
   ggtitle(paste("KD")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datKD$fieldDate.num], 
@@ -614,11 +833,11 @@ df = data.frame(xC = meanC , low=cred_intC[[1]][,1]*100, high=cred_intC[[1]][,2]
 ggplot(df) +
   aes(x = time, y = xC*100) +
   geom_line(col="chartreuse3", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="chartreuse3") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="chartreuse3") +
   ggtitle(paste("C")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datC$fieldDate.num], 
-                             y=datC$C*100, house=datC$house), aes(x=x, y=y), alpha = 1, color="chartreuse3", shape=1, size=1) +    
+             length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datC$fieldDate.num], 
+             y=datC$C*100, house=datC$house), aes(x=x, y=y), alpha = 1, color="chartreuse3", shape=1, size=1) +    
   labs(x="Date", y=paste("Support for C", "(%)")) +
   theme_bw() +
   theme(axis.text = element_text(size = 9),
@@ -640,7 +859,7 @@ df = data.frame(xS = meanS , low=cred_intS[[1]][,1]*100, high=cred_intS[[1]][,2]
 ggplot(df) +
   aes(x = time, y = xS*100) +
   geom_line(col="red", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="red") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="red") +
   ggtitle(paste("S")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datS$fieldDate.num], 
@@ -666,7 +885,7 @@ df = data.frame(xMP = meanMP , low=cred_intMP[[1]][,1]*100, high=cred_intMP[[1]]
 ggplot(df) +
   aes(x = time, y = xMP*100) +
   geom_line(col="forestgreen", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="forestgreen") +
+#  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="forestgreen") +
   ggtitle(paste("MP")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datMP$fieldDate.num], 
@@ -691,7 +910,7 @@ df = data.frame(xV = meanV , low=cred_intV[[1]][,1]*100, high=cred_intV[[1]][,2]
 ggplot(df) +
   aes(x = time, y = xV*100) +
   geom_line(col="darkred", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkred") +
+  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkred") +
   ggtitle(paste("V")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datV$fieldDate.num], 
@@ -717,7 +936,7 @@ df = data.frame(xSD = meanSD , low=cred_intSD[[1]][,1]*100, high=cred_intSD[[1]]
 ggplot(df) +
   aes(x = time, y = xSD*100) +
   geom_line(col="skyblue3", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="skyblue3") +
+ # geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="skyblue3") +
   ggtitle(paste("SD")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datSD$fieldDate.num], 
