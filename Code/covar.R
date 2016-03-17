@@ -46,7 +46,46 @@ pairs((POLLS[ind2016,]), font.labels=0.2, upper.panel=NULL, main="2016")
 
 pairs(POLLS, font.labels=0.1, cex.labels=1.5, upper.panel=NULL, las=1)
 
+plot(POLLS, dataList=NULL, lineColors=NULL, lineStyles=NULL, lineWidths=2, verbose=FALSE, cex.main=1.2, cex.lab=1, cex.axis=1, cex.legend=1, par.zoom=1)
+plot(POLLS[,1:2], dataList=NULL, lineColors=NULL, lineStyles=NULL, lineWidths=2, verbose=FALSE, cex.main=1.2, cex.lab=1, cex.axis=1, cex.legend=1, par.zoom=1)
+
+
+######## DENSITIES ########
+
+smoothScatter(POLLS[,1],POLLS[,2], colorramp=colorRampPalette(c("light green", "yellow", "orange", "red"))(100))
+Lab.palette <- colorRampPalette(c("white", "lightgreen","yellow", "orange", "red"), space = "Lab")
+smoothScatter(x = POLLS[,1], y=POLLS[,2], colramp = Lab.palette, nrpoints=0)
+smoothScatter(POLLS[,1], colramp = Lab.palette, nrpoints=0)
+
+
+smoothScatter(x = POLLS[,2], y=POLLS[,1], colramp = Lab.palette, nrpoints=0, ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[2], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,1], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[3], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,1], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[4], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,1], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,1], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,7], y=POLLS[,1], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,8], y=POLLS[,1], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[1], xlab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,2], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[2], xlab=colnames(POLLS)[3], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,2], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[2], xlab=colnames(POLLS)[4], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,2], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[2], xlab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,2], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[2], xlab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,7], y=POLLS[,2], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[2], xlab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,8], y=POLLS[,2], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[2], xlab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[3], xlab=colnames(POLLS)[4], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[3], xlab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[3], xlab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,7], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[3], xlab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,8], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,ylab=colnames(POLLS)[3], xlab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+
+
 polls.elec = POLLS[c(ind2002, ind2006, ind2010, ind2014),]
+layout(matrix(c(1,0,0,0,0,0,0,
+                2,8,0,0,0,0,0,
+                3,9,14,0,0,0,0,
+                4,10,15,0,0,0,0,
+                5,11,16,19,0,0,0,
+                6,12,17,20,22,0,0,
+                7,13,18,21,23,27,28), nrow=7, ncol=7, byrow = TRUE))
 
 
 pairs((POLLS[ind2002,-ncol(POLLS)]), font.labels=0.2, upper.panel=NULL, main="2002")
@@ -113,3 +152,92 @@ for(i in inds){
   cor.list[[j]] = cor(polls[i,3:10], use="pairwise.complete.obs")
   j = j+1
 }
+
+####################
+par(mgp=c(0.2,1,0),mai = c(0.15, 0.15, 0.15, 0.15))  
+smoothScatter(x = POLLS[,1], y=POLLS[,2], colramp = Lab.palette, nrpoints=0, xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[2], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,1], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[3], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,1], y=POLLS[,4], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[4], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,1], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,1], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,1], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,1], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[1], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[2], ylab=colnames(POLLS)[3], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,4], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[2], ylab=colnames(POLLS)[4], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[2], ylab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[2], ylab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[2], ylab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[2], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,4], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[3], ylab=colnames(POLLS)[4], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[3], ylab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[3], ylab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[3], ylab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[3], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[4], ylab=colnames(POLLS)[5], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[4], ylab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[4], ylab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[4], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[5], ylab=colnames(POLLS)[6], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[5], ylab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[5], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[6], ylab=colnames(POLLS)[7], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[6], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,7], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab=colnames(POLLS)[7], ylab=colnames(POLLS)[8], xaxt='n',yaxt='n')
+
+
+layout(matrix(c(1,2,3,4,5,6,7,
+                0,8,9,10,11,12,13,
+                0,0,14,15,16,17,18,
+                0,0,0,19,20,21,22), nrow=4, ncol=7, byrow = TRUE))
+
+
+par(mgp=c(3,1,0))
+layout(matrix(c(1,2,3,4,5,6,7,
+                0,8,9,10,11,12,13,
+                0,0,14,15,16,17,18,
+                0,0,0,19,20,21,22,
+                0,0,0,0,23,24,25,
+                0,0,0,0,0,26,27,
+                0,0,0,0,0,0,28), nrow=7, ncol=7, byrow = TRUE))
+
+dev.off()
+layout(matrix(c(1,0,0,0,0,0,0,
+                2,8,0,0,0,0,0,
+                3,9,14,0,0,0,0,
+                4,10,15,19,0,0,0,
+                5,11,16,20,23,0,0,
+                6,12,17,21,24,26,0,
+                7,13,18,22,25,27,28), nrow=7, ncol=7, byrow = TRUE))
+
+par(mgp=c(0.2,1,0),mai = c(0.05, 0.15, 0.15, 0.15))  
+
+smoothScatter(x = POLLS[,1], y=POLLS[,2], colramp = Lab.palette, nrpoints=0, xlab="", ylab=colnames(POLLS)[2], xaxt='n',yaxt='n', main=colnames(POLLS)[1], font.lab=2)
+smoothScatter(x = POLLS[,1], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(POLLS)[3], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = POLLS[,1], y=POLLS[,4], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(POLLS)[4], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = POLLS[,1], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(POLLS)[5], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = POLLS[,1], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(POLLS)[6], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = POLLS[,1], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(POLLS)[7], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = POLLS[,1], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(POLLS)[8], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = POLLS[,2], y=POLLS[,3], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n', main=colnames(POLLS)[2])
+smoothScatter(x = POLLS[,2], y=POLLS[,4], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,2], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,4], colramp = Lab.palette, nrpoints=0,main=colnames(POLLS)[3],xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,3], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,5], colramp = Lab.palette, nrpoints=0,main=colnames(POLLS)[4], xlab="",ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,4], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,6], colramp = Lab.palette, nrpoints=0,main=colnames(POLLS)[5], xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,5], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,7], colramp = Lab.palette, nrpoints=0,main=colnames(POLLS)[6], xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,6], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = POLLS[,7], y=POLLS[,8], colramp = Lab.palette, nrpoints=0,main=colnames(POLLS)[7], xlab="", ylab="", xaxt='n',yaxt='n')
+
+
