@@ -1,11 +1,12 @@
 ################################################
 ##### normal-gamma, non-imformative priors #####
 ################################################
-ninter=3000
+
 
 ############# M ###################
 
 library(rjags)
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
 data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
 polls = repmis::source_data(data_url, sep = ",", header = TRUE)
 
@@ -53,7 +54,8 @@ xM[i] ~ dnorm(xM[i-1],phiM)
 }
 
 ## priors
-phiM ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsM ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiM <-1/epsM
 }
 '
 
@@ -63,9 +65,11 @@ data_M = list(M = datM$M, precM = pM, xM = c(rnorm(1,elec[2,1], 0.00001),rep(NA,
               day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_M,con="kalman_M.bug")
 
-system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M))
+system.time(jags_mod_M <- jags.model("kalman_M.bug", data = data_M, n.chain=3))
 
-system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 1))
+ninter=10000
+
+system.time(outM <- coda.samples(jags_mod_M,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 100))
 #system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
 sumM = summary(outM)
 cred_intM = HPDinterval(outM[,which(regexpr("xM", row.names(sumM$statistics))==1)], 0.95)
@@ -118,7 +122,8 @@ xL[i] ~ dnorm(xL[i-1],phiL)
 }
 
 ## priors
-phiL ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsL ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiL <- 1/epsL
 }
 '
 
@@ -128,9 +133,9 @@ data_L = list(L = datL$L, precL = pL, xL = c(rnorm(1,elec[2,2], 0.00001),rep(NA,
               day = datL$fieldDate.num, npolls = nrow(datL), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_L,con="kalman_L.bug")
 
-system.time(jags_mod_L <- jags.model("kalman_L.bug", data = data_L))
+system.time(jags_mod_L <- jags.model("kalman_L.bug", data = data_L, n.chain=3))
 
-system.time(outL <- coda.samples(jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, n.thin = 1))
+system.time(outL <- coda.samples(jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, n.thin = 100))
 #system.time(outL_jags <- jags.samples(jags_mod_L,variable.names = c("xL", "L","phiL" ), n.iter = 5000, n.thin = 10))
 sumL = summary(outL)
 cred_intL = HPDinterval(outL[,which(regexpr("xL", row.names(sumL$statistics))==1)], 0.95)
@@ -182,7 +187,8 @@ xKD[i] ~ dnorm(xKD[i-1],phiKD)
 }
 
 ## priors
-phiKD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsKD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiKD <- 1/epsKD
 }
 '
 
@@ -192,9 +198,9 @@ data_KD = list(KD = datKD$KD, precKD = pKD, xKD = c(rnorm(1,elec[2,3], 0.00001),
                day = datKD$fieldDate.num, npolls = nrow(datKD), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_KD,con="kalman_KD.bug")
 
-system.time(jags_mod_KD <- jags.model("kalman_KD.bug", data = data_KD))
+system.time(jags_mod_KD <- jags.model("kalman_KD.bug", data = data_KD, n.chain=3))
 
-system.time(outKD <- coda.samples(jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, n.thin = 1))
+system.time(outKD <- coda.samples(jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, n.thin = 100))
 #system.time(outKD_jags <- jags.samples(jags_mod_KD,variable.names = c("xKD", "KD","phiKD" ), n.iter = 5000, n.thin = 10))
 sumKD = summary(outKD)
 cred_intKD = HPDinterval(outKD[,which(regexpr("xKD", row.names(sumKD$statistics))==1)], 0.95)
@@ -245,7 +251,8 @@ xC[i] ~ dnorm(xC[i-1],phiC)
 }
 
 ## priors
-phiC ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsC ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiC <- 1/epsC
 }
 '
 
@@ -255,9 +262,9 @@ data_C = list(C = datC$C, precC = pC, xC = c(rnorm(1,elec[2,4], 0.00001),rep(NA,
               day = datC$fieldDate.num, npolls = nrow(datC), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_C,con="kalman_C.bug")
 
-system.time(jags_mod_C <- jags.model("kalman_C.bug", data = data_C))
+system.time(jags_mod_C <- jags.model("kalman_C.bug", data = data_C, n.chain=3))
 
-system.time(outC <- coda.samples(jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, n.thin = 1))
+system.time(outC <- coda.samples(jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, n.thin = 100))
 #system.time(outC_jags <- jags.samples(jags_mod_C,variable.names = c("xC", "C","phiC" ), n.iter = 5000, n.thin = 10))
 sumC = summary(outC)
 cred_intC = HPDinterval(outC[,which(regexpr("xC", row.names(sumC$statistics))==1)], 0.95)
@@ -309,7 +316,8 @@ xS[i] ~ dnorm(xS[i-1],phiS)
 }
 
 ## priors
-phiS ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsS ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiS <- 1/epsS
 }
 '
 
@@ -319,9 +327,9 @@ data_S = list(S = datS$S, precS = pS, xS = c(rnorm(1,elec[2,5], 0.00001),rep(NA,
               day = datS$fieldDate.num, npolls = nrow(datS), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_S,con="kalman_S.bug")
 
-system.time(jags_mod_S <- jags.model("kalman_S.bug", data = data_S))
+system.time(jags_mod_S <- jags.model("kalman_S.bug", data = data_S, n.chain=3))
 
-system.time(outS <- coda.samples(jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, n.thin = 1))
+system.time(outS <- coda.samples(jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, n.thin = 100))
 #system.time(outS_jags <- jags.samples(jags_mod_S,variable.names = c("xS", "S","phiS" ), n.iter = 5000, n.thin = 10))
 sumS = summary(outS)
 cred_intS = HPDinterval(outS[,which(regexpr("xS", row.names(sumS$statistics))==1)], 0.95)
@@ -373,7 +381,8 @@ xMP[i] ~ dnorm(xMP[i-1],phiMP)
 }
 
 ## priors
-phiMP ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsMP ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiMP <- 1/epsMP
 }
 '
 
@@ -383,9 +392,9 @@ data_MP = list(MP = datMP$MP, precMP = pMP, xMP = c(rnorm(1,elec[2,6], 0.00001),
                day = datMP$fieldDate.num, npolls = nrow(datMP), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_MP,con="kalman_MP.bug")
 
-system.time(jags_mod_MP <- jags.model("kalman_MP.bug", data = data_MP))
+system.time(jags_mod_MP <- jags.model("kalman_MP.bug", data = data_MP, n.chain=3))
 
-system.time(outMP <- coda.samples(jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, n.thin = 1))
+system.time(outMP <- coda.samples(jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, n.thin = 100))
 #system.time(outMP_jags <- jags.samples(jags_mod_MP,variable.names = c("xMP", "MP","phiMP" ), n.iter = 5000, n.thin = 10))
 sumMP = summary(outMP)
 cred_intMP = HPDinterval(outMP[,which(regexpr("xMP", row.names(sumMP$statistics))==1)], 0.95)
@@ -437,7 +446,8 @@ xV[i] ~ dnorm(xV[i-1],phiV)
 }
 
 ## priors
-phiV ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsV ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiV <- 1/epsV
 }
 '
 
@@ -447,9 +457,9 @@ data_V = list(V = datV$V, precV = pV, xV = c(rnorm(1,elec[2,7], 0.00001),rep(NA,
               day = datV$fieldDate.num, npolls = nrow(datV), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_V,con="kalman_V.bug")
 
-system.time(jags_mod_V <- jags.model("kalman_V.bug", data = data_V))
+system.time(jags_mod_V <- jags.model("kalman_V.bug", data = data_V, n.chain=3))
 
-system.time(outV <- coda.samples(jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, n.thin = 1))
+system.time(outV <- coda.samples(jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, n.thin = 100))
 #system.time(outV_jags <- jags.samples(jags_mod_V,variable.names = c("xV", "V","phiV" ), n.iter = 5000, n.thin = 10))
 sumV = summary(outV)
 cred_intV = HPDinterval(outV[,which(regexpr("xV", row.names(sumV$statistics))==1)], 0.95)
@@ -501,7 +511,8 @@ xSD[i] ~ dnorm(xSD[i-1],phiSD)
 }
 
 ## priors
-phiSD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+epsSD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiSD <- 1/epsSD
 }
 '
 
@@ -511,9 +522,9 @@ data_SD = list(SD = datSD$SD, precSD = pSD, xSD = c(rnorm(1,elec[2,8], 0.00001),
                day = datSD$fieldDate.num, npolls = nrow(datSD), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_SD,con="kalman_SD.bug")
 
-system.time(jags_mod_SD <- jags.model("kalman_SD.bug", data = data_SD))
+system.time(jags_mod_SD <- jags.model("kalman_SD.bug", data = data_SD, n.chain=3))
 
-system.time(outSD <- coda.samples(jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, n.thin = 1))
+system.time(outSD <- coda.samples(jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, n.thin = 100))
 #system.time(outSD_jags <- jags.samples(jags_mod_SD,variable.names = c("xSD", "SD","phiSD" ), n.iter = 5000, n.thin = 10))
 sumSD = summary(outSD)
 cred_intSD = HPDinterval(outSD[,which(regexpr("xSD", row.names(sumSD$statistics))==1)], 0.95)
