@@ -542,8 +542,33 @@ meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),
 meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1]
 meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
 
+str(outM)
+
+
+rsimM = outM[[i]]
+nsim = dim(rsimM)[1]
+simxM = rsimM[,which(regexpr("xM", colnames(rsimM))==1)]
+sig.sim = matrix(1/pM, nrow=nsim, ncol=dim(rsimM)[2])
+cbind(rep(1/pM,2))
+
+P = 1/pM
+for(i in 2:nsim){
+  P = c(P, 1/pM )
+}
+
+
+dateSmooth = ee[[1]]
+for(i in 2:nrow(datM)){
+  dateSmooth = c(dateSmooth, ee[[i]])
+}
+
+y.repM = sapply(1:nsim, function(s) rnorm(250,simxM[s,datM$fieldDate.num], P[s,]))
+
+dim([datM$fieldDate.num])
+
 set.seed(901207)
 i = sample(1:3,1)
+set.seed(901207)
 j = sample(1:nrow(outM[[i]]),1)
 rsimM = outM[[i]][j,]
 rsimL = outL[[i]][j,]
@@ -563,7 +588,7 @@ rsimMP2 = rsimMP[which(regexpr("xMP", names(rsimMP))==1)]
 rsimV2 = rsimV[which(regexpr("xV", names(rsimV))==1)]
 rsimSD2 = rsimSD[which(regexpr("xSD", names(rsimSD))==1)]
 
-
+TEST =outM [[i]][j,which(regexpr("xM", colnames(outM[[i]]))==1)]
 ###### resiudals - posterior distribution #####
 
 resM = datM$M-rsimM[[1]][which(regexpr("xM", row.names(sumM$statistics))==1)][datM$fieldDate.num]
@@ -596,50 +621,50 @@ hist(yrepM[2,]*100)
 ####### y^rep min ##### 
 
 par(mfrow=c(3,3))
-min_repM = apply(yrepM,1,min)
+min_repM = apply(yrepM,2,min)
 min_M = min(datM$M)
 hist(min_repM, main="M", col="blue", xlab="Minimum value in replicated data", las=1)
 abline(v=min_M, lty=1, lwd=2)
 sum(ifelse(min_repM>=min_M,1,0))/length(min_repM) 
 
-min_repL = apply(yrepL,1,min)
+min_repL = apply(yrepL,2,min)
 min_L = min(datL$L)
 hist(min_repL, main="L", col="lightblue3", xlab="Minimum value in replicated data", las=1)
 abline(v=min_L, lty=1, lwd=2)
 sum(ifelse(min_repL>=min_L,1,0))/length(min_repL) 
 
-min_repKD = apply(yrepKD,1,min)
+min_repKD = apply(yrepKD,2,min)
 min_KD = min(datKD$KD)
 hist(min_repKD, main="KD", col="darkblue", xlab="Minimum value in replicated data", las=1)
 abline(v=min_KD, lty=1, lwd=2)
 sum(ifelse(min_repKD>=min_KD,1,0))/length(min_repKD) 
 
-min_repC = apply(yrepC,1,min)
+min_repC = apply(yrepC,2,min)
 min_C = min(datC$C)
 hist(min_repC, main="C", col="chartreuse3", xlab="Minimum value in replicated data", las=1)
 abline(v=min_C, lty=1, lwd=2)
 sum(ifelse(min_repC>=min_C,1,0))/length(min_repC) 
 
-min_repS = apply(yrepS,1,min)
+min_repS = apply(yrepS,2,min)
 min_S = min(datS$S)
 hist(min_repS, main="S", col="red", xlab="Minimum value in replicated data", las=1)
 abline(v=min_S, lty=1, lwd=2)
 sum(ifelse(min_repS>=min_S,1,0))/length(min_repS) 
 
-min_repMP = apply(yrepMP,1,min)
+min_repMP = apply(yrepMP,2,min)
 min_MP = min(datMP$MP)
 hist(min_repMP, main="MP", col="forestgreen", xlab="Minimum value in replicated data", las=1)
 abline(v=min_MP, lty=1, lwd=2)
 sum(ifelse(min_repMP>=min_MP,1,0))/length(min_repMP) 
 
-min_repV = apply(yrepV,1,min)
+min_repV = apply(yrepV,2,min)
 min_V = min(datV$V)
 hist(min_repV, main="V", col="darkred", xlab="Minimum value in replicated data", las=1)
 abline(v=min_V, lty=1, lwd=2)
 sum(ifelse(min_repV>=min_V,1,0))/length(min_repV) 
 
 
-min_repSD = apply(yrepSD,1,min)
+min_repSD = apply(yrepSD,2,min)
 min_SD = min(datSD$SD)
 hist(min_repSD, main="SD", col="skyblue3", xlab="Minimum value in replicated data", las=1)
 abline(v=min_SD, lty=1, lwd=2)
@@ -648,49 +673,49 @@ par(mfrow=c(1,1))
 
 ####### y^rep max ##### 
 par(mfrow=c(3,3))
-max_repM = apply(yrepM,1,max)
+max_repM = apply(yrepM,2,max)
 max_M = max(datM$M)
 hist(max_repM, main="M", col="blue", xlab="Maximum value in replicated data", las=1)
 abline(v=max_M, lty=1, lwd=2)
 sum(ifelse(max_repM>=max_M,1,0))/length(max_repM) 
 
-max_repL = apply(yrepL,1,max)
+max_repL = apply(yrepL,2,max)
 max_L = max(datL$L)
 hist(max_repL, main="L", col="lightblue3", xlab="Maximum observation in replicated data", las=1)
 abline(v=max_L, lty=1, lwd=2)
 sum(ifelse(max_repL>=max_L,1,0))/length(max_repL) 
 
-max_repKD = apply(yrepKD,1,max)
+max_repKD = apply(yrepKD,2,max)
 max_KD = max(datKD$KD)
 hist(max_repKD, main="KD", col="darkblue", xlab="Maximum observation in replicated data", las=1)
 abline(v=max_KD, lty=1, lwd=2)
 sum(ifelse(max_repKD>=max_KD,1,0))/length(max_repKD) 
 
-max_repC = apply(yrepC,1,max)
+max_repC = apply(yrepC,2,max)
 max_C = max(datC$C)
 hist(max_repC, main="C", col="chartreuse3", xlab="Maximum observation in replicated data", las=1)
 abline(v=max_C, lty=1, lwd=2)
 sum(ifelse(max_repC<max_C,1,0))/length(max_repC) 
 
-max_repS = apply(yrepS,1,max)
+max_repS = apply(yrepS,2,max)
 max_S = max(datS$S)
 hist(max_repS, main="S", col="red", xlab="Maximum value in replicated data", las=1)
 abline(v=max_S, lty=1, lwd=2)
 sum(ifelse(max_repS>=max_S,1,0))/length(max_repS) 
 
-max_repMP = apply(yrepMP,1,max)
+max_repMP = apply(yrepMP,2,max)
 max_MP = max(datMP$MP)
 hist(max_repMP, main="MP", col="forestgreen", xlab="Maximum value in replicated data", las=1)
 abline(v=max_MP, lty=1, lwd=2)
 sum(ifelse(max_repMP<max_MP,1,0))/length(max_repMP) 
 
-max_repV = apply(yrepV,1,max)
+max_repV = apply(yrepV,2,max)
 max_V = max(datV$V)
 hist(max_repV, main="V", col="darkred", xlab="Maximum value in replicated data", las=1)
 abline(v=max_V, lty=1, lwd=2)
 sum(ifelse(max_repV>=max_V,1,0))/length(max_repV) 
 
-max_repSD = apply(yrepSD,1,max)
+max_repSD = apply(yrepSD,2,max)
 max_SD = max(datSD$SD)
 hist(max_repSD, main="SD", col="skyblue3", xlab="Maximum observation in replicated data", las=1)
 abline(v=max_SD, lty=1, lwd=2)
@@ -769,21 +794,110 @@ par(mfrow=c(1,1))
 #################################################
 ##################### PLOTS #####################
 #################################################
-#orig.date = as.Date("2002-09-11") #day before election 2011
-#end.date = as.Date('2014-09-14') #election day 2014
+
+dfM = data.frame(party = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
+                 time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                 party2 = rep("M", length(c(rep(NA,end.date - orig.date)))))
+dfL = data.frame(party = meanL , low=cred_intL[[1]][,1]*100, high=cred_intL[[1]][,2]*100,
+                 time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                 party2 = rep("L", length(c(rep(NA,end.date - orig.date)))))
+dfKD = data.frame(party = meanKD , low=cred_intKD[[1]][,1]*100, high=cred_intKD[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                party2 = rep("KD", length(c(rep(NA,end.date - orig.date)))))
+dfC = data.frame(party = meanC , low=cred_intC[[1]][,1]*100, high=cred_intC[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                party2 = rep("C", length(c(rep(NA,end.date - orig.date)))))
+dfS = data.frame(party = meanS , low=cred_intS[[1]][,1]*100, high=cred_intS[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                party2 = rep("S", length(c(rep(NA,end.date - orig.date)))))
+dfMP = data.frame(party = meanMP , low=cred_intMP[[1]][,1]*100, high=cred_intMP[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                party2 = rep("MP", length(c(rep(NA,end.date - orig.date)))))
+dfV = data.frame(party = meanV , low=cred_intV[[1]][,1]*100, high=cred_intV[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                party2 = rep("V", length(c(rep(NA,end.date - orig.date)))))
+dfSD = data.frame(party = meanSD , low=cred_intSD[[1]][,1]*100, high=cred_intSD[[1]][,2]*100,
+                time=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date)))),
+                party2 = rep("SD", length(c(rep(NA,end.date - orig.date)))))
+list.df = rbind(dfM, dfL, dfKD, dfC, dfS, dfMP, dfV, dfSD)
+
+pointsM = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datM$fieldDate.num], 
+           y=datM$M*100, house=datM$house, party=rep("M",length(c(rep(NA,end.date - orig.date))))[datM$fieldDate.num])
+pointsL = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datL$fieldDate.num], 
+                     y=datL$L*100, house=datL$house, party=rep("L",length(c(rep(NA,end.date - orig.date))))[datL$fieldDate.num])
+pointsKD = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datKD$fieldDate.num], 
+                     y=datKD$KD*100, house=datKD$house, party=rep("KD",length(c(rep(NA,end.date - orig.date))))[datKD$fieldDate.num])
+pointsC = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date-1))))[datC$fieldDate.num], 
+                      y=datC$C*100, house=datC$house, party=rep("C",length(c(rep(NA,end.date - orig.date))))[datC$fieldDate.num])
+pointsS = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datS$fieldDate.num], 
+                      y=datS$S*100, house=datS$house, party=rep("S",length(c(rep(NA,end.date - orig.date))))[datS$fieldDate.num])
+pointsMP = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datMP$fieldDate.num], 
+                      y=datMP$MP*100, house=datMP$house, party=rep("MP",length(c(rep(NA,end.date - orig.date))))[datMP$fieldDate.num])
+pointsV = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datV$fieldDate.num], 
+                      y=datV$V*100, house=datV$house, party=rep("V",length(c(rep(NA,end.date - orig.date))))[datV$fieldDate.num])
+pointsSD = data.frame(x=seq(as.Date('2006-09-16'),by='days',length=length(c(rep(NA,end.date - orig.date))))[datSD$fieldDate.num], 
+                      y=datSD$SD*100, house=datSD$house, party=rep("SD",length(c(rep(NA,end.date - orig.date))))[datSD$fieldDate.num])
+points = rbind(pointsM, pointsL, pointsKD, pointsC, pointsS, pointsMP, pointsV, pointsSD)
+
+cols = c("blue", "lightblue3", "darkblue","chartreuse3","red","forestgreen","darkred","skyblue3" )
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  plots <- c(list(...), plotlist)
+  numPlots = length(plots)
+  if (is.null(layout)) {
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))}
+  if (numPlots==1) {
+    print(plots[[1]])
+  } else {
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    for (i in 1:numPlots) {
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+
+k=1
+g2 =list()
+for(i in unique(list.df$party2)){
+  g <- ggplot(list.df[list.df$party2==i,]) +
+    aes(x = time, y = party*100) +
+    geom_line(col=cols[k], alpha=1)  +
+    geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill=cols[k]) + 
+    geom_point(data=points[points$party==i,], aes(x=x, y=y), alpha = 1, color=cols[k], shape=1, size=1) +    
+    labs(x="Date", y=paste("Support for",i, "(%)")) +
+    theme_bw() +
+    facet_wrap( ~ party2, ncol=1, nrow=1)+
+    theme(axis.text = element_text(size = 9),
+          legend.key = element_rect(fill = "white"),
+          legend.background = element_rect(fill = "white"),
+          panel.grid.major = element_line(colour = "lightgrey"),
+          panel.grid.minor = element_blank())
+  g2[[k]] = g
+  k=k+1
+}
+
+multiplot(g2[[1]],g2[[2]], g2[[3]], g2[[4]],
+          g2[[5]],g2[[6]], g2[[7]], g2[[8]], cols=2)
+
 
 #### plots M #####
 
 library(ggplot2)
 meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1]
-meanM = rsimM
+#meanM = rsimM
 
 low2 = (meanM - 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),2])*100
 high2 = (meanM + 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),2])*100
 df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
                 time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
                 low2=low2, high2=high2)
-ggplot(df) +
+pM <- ggplot(df) +
   aes(x = time, y = xM*100) +
   geom_line(col="blue", alpha=1)  +
   geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") + 
@@ -808,10 +922,10 @@ high2 = (meanL + 1.96 * sumL$statistics[which(regexpr("xL", row.names(sumL$stati
 df = data.frame(xL = meanL , low=cred_intL[[1]][,1]*100, high=cred_intL[[1]][,2]*100,
                 time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
                 low2=low2, high2=high2)
-ggplot(df) +
+pL <- ggplot(df) +
   aes(x = time, y = xL*100) +
   geom_line(col="lightblue3", alpha=1)  +
-  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="lightblue3") +
+  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="lightblue3") +
   ggtitle(paste("L")) +
   geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
                                    length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datL$fieldDate.num], 
@@ -823,7 +937,6 @@ ggplot(df) +
         legend.background = element_rect(fill = "white"),
         panel.grid.major = element_line(colour = "lightgrey"),
         panel.grid.minor = element_blank())
-
 
 
 #### plots KD #####
