@@ -1,4 +1,5 @@
-library(rstan)
+#install.packages("rstan", lib="C:/Users/mirhu86/Documents/packages")
+library(rstan, lib="C:/Users/mirhu86/Documents/packages")
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
@@ -14,44 +15,29 @@ real myvar[npolls];
 
 parameters {
 real<lower=0,upper=1> alphaM[nperiods];
-real omega;
-real<lower=0.00001> s[npolls];
+real<lower=0.0000000001> omega;
 }
 
-transformed parameters {
-real<lower=0> tau;
-tau <- 1/omega; ##inverse_gamma
-
-}
 
 model { 
-alphaM[1] ~ normal(0.27,0.00000001);
-omega ~ gamma(800000,1);
+alphaM[1] ~ normal(0.2623,0.00001);
+omega ~ gamma(1,1);
 
 for (t in 2:(nperiods)) {
-alphaM[t] ~ normal(alphaM[t-1], tau);
+alphaM[t] ~ normal(alphaM[t-1], omega);
 }
 
 for (i in 1:npolls) {
-y[i]  ~ normal(alphaM[date[i]], s[i]*myvar[i]);
-}
-}
-
-generated quantities{
-real<lower=0, upper=1> Pred[npolls]; #generating posterior predictive
-real<lower=0, upper=1> PredM[npolls]; #predictive mean
-for(i in 1:npolls) {
-PredM[i] <-alphaM[date[i]];
-Pred[i]<-normal_rng(PredM[i], myvar[i]);
+y[i]  ~ normal(alphaM[date[i]], myvar[i]);
 }
 }
 
 '
-#rgamma(1000,10,10)
+
 test_M = stan_model(model_code=stan_M)
 Mstan=list(npolls=nrow(datM), nperiods=as.numeric(end.date - orig.date), y=datM$M, 
            myvar=(datM$M*(1-datM$M)/datM$n),date=datM$fieldDate.num)
-fitData_M=sampling(test_M, data=Mstan, warmup=300, chain=1 ,iter=3000)#, 
+fitData_M=sampling(test_M, data=Mstan, chain=3 ,iter=10000)#, 
                 #  control=list(adapt_delta=0.95)); #thin=10,
 traceplot(fitData_M)
 samples_M = extract(fitData_M, c("alphaM",  "tau", "Pred","PredM"))
