@@ -48,9 +48,9 @@ system.time(jags_mod_M2 <- jags.model("kalman_M2.bug", data = data_M2, n.chains 
 ninter = 10000
 system.time(outM2 <- coda.samples(jags_mod_M2,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 100))
 #system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
-sumM = summary(outM2)
+sumM2 = summary(outM2)
 cred_intM = HPDinterval(outM2[,which(regexpr("xM", row.names(sumM$statistics))==1)], 0.95)
 #sumM$quantiles[elec.day[3],c(1,5)] 
-outM[,which(regexpr("xM", row.names(sumM2$statistics))==1)]
-outM[,which(regexpr("xM", row.names(sumM$statistics))==1)]
+outM2[,which(regexpr("xM", row.names(sumM2$statistics))==1)]
+outM2[,which(regexpr("xM", row.names(sumM2$statistics))==1)]
 plot()
