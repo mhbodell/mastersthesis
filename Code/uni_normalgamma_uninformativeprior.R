@@ -542,80 +542,57 @@ meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),
 meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1]
 meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
 
-str(outM)
-
-
-rsimM = outM[[i]]
-nsim = dim(rsimM)[1]
-simxM = rsimM[,which(regexpr("xM", colnames(rsimM))==1)]
-sig.sim = matrix(1/pM, nrow=nsim, ncol=dim(rsimM)[2])
-cbind(rep(1/pM,2))
-
-P = 1/pM
-for(i in 2:nsim){
-  P = c(P, 1/pM )
-}
-
-
-dateSmooth = ee[[1]]
-for(i in 2:nrow(datM)){
-  dateSmooth = c(dateSmooth, ee[[i]])
-}
-
-y.repM = sapply(1:nsim, function(s) rnorm(250,simxM[s,datM$fieldDate.num], P[s,]))
-
-dim([datM$fieldDate.num])
 
 set.seed(901207)
 i = sample(1:3,1)
-set.seed(901207)
-j = sample(1:nrow(outM[[i]]),1)
-rsimM = outM[[i]][j,]
-rsimL = outL[[i]][j,]
-rsimKD = outKD[[i]][j,]
-rsimC = outC[[i]][j,]
-rsimS = outS[[i]][j,]
-rsimMP = outMP[[i]][j,]
-rsimV = outV[[i]][j,]
-rsimSD = outSD[[i]][j,]
-
-rsimM2 = rsimM[which(regexpr("xM", names(rsimM))==1)]
-rsimL2 = rsimL[which(regexpr("xL", names(rsimL))==1)]
-rsimKD2 = rsimKD[which(regexpr("xKD", names(rsimKD))==1)]
-rsimC2 = rsimC[which(regexpr("xC", names(rsimC))==1)]
-rsimS2 = rsimS[which(regexpr("xS", names(rsimS))==1)]
-rsimMP2 = rsimMP[which(regexpr("xMP", names(rsimMP))==1)]
-rsimV2 = rsimV[which(regexpr("xV", names(rsimV))==1)]
-rsimSD2 = rsimSD[which(regexpr("xSD", names(rsimSD))==1)]
-
-TEST =outM [[i]][j,which(regexpr("xM", colnames(outM[[i]]))==1)]
-###### resiudals - posterior distribution #####
-
-resM = datM$M-rsimM[[1]][which(regexpr("xM", row.names(sumM$statistics))==1)][datM$fieldDate.num]
-resL = datL$L-rsimL[[1]][which(regexpr("xL", row.names(sumL$statistics))==1)][datL$fieldDate.num]
-resKD = datKD$KD-rsimKD[[1]][which(regexpr("xKD", row.names(sumKD$statistics))==1)][datKD$fieldDate.num]
-resC = datC$C-rsimC[[1]][which(regexpr("xC", row.names(sumC$statistics))==1)][datC$fieldDate.num]
-resS = datS$S-rsimS[[1]][which(regexpr("xS", row.names(sumS$statistics))==1)][datS$fieldDate.num]
-resMP = datMP$MP-rsimMP[[1]][which(regexpr("xMP", row.names(sumMP$statistics))==1)][datMP$fieldDate.num]
-resV = datV$V-rsimV[[1]][which(regexpr("xV", row.names(sumV$statistics))==1)][datV$fieldDate.num]
-resSD = datSD$SD-rsimSD[[1]][which(regexpr("xSD", row.names(sumSD$statistics))==1)][datSD$fieldDate.num]
+rsimM = outM[[i]]
+rsimL = outL[[i]]
+rsimKD = outKD[[i]]
+rsimC = outC[[i]]
+rsimS = outS[[i]]
+rsimMP = outMP[[i]]
+rsimV = outV[[i]]
+rsimSD = outSD[[i]]
+nsim = dim(rsimM)[1]
+simxM = rsimM[,which(regexpr("xM", colnames(rsimM))==1)]
+simxL = rsimL[,which(regexpr("xL", colnames(rsimL))==1)]
+simxKD = rsimKD[,which(regexpr("xKD", colnames(rsimKD))==1)]
+simxC = rsimC[,which(regexpr("xC", colnames(rsimC))==1)]
+simxS = rsimS[,which(regexpr("xS", colnames(rsimS))==1)]
+simxMP = rsimMP[,which(regexpr("xMP", colnames(rsimMP))==1)]
+simxV = rsimV[,which(regexpr("xV", colnames(rsimV))==1)]
+simxSD = rsimSD[,which(regexpr("xSD", colnames(rsimSD))==1)]
+varM = matrix (NA, nrow=nsim, ncol=nrow(datM))
+varL = matrix (NA, nrow=nsim, ncol=nrow(datL))
+varKD = matrix (NA, nrow=nsim, ncol=nrow(datKD))
+varC = matrix (NA, nrow=nsim, ncol=nrow(datC))
+varS = matrix (NA, nrow=nsim, ncol=nrow(datS))
+varMP = matrix (NA, nrow=nsim, ncol=nrow(datMP))
+varV = matrix (NA, nrow=nsim, ncol=nrow(datV))
+varSD = matrix (NA, nrow=nsim, ncol=nrow(datSD))
+for(i in 1:nrow(sim.var)){
+  varM[i,] = 1/pM
+  varL[i,] = 1/pL
+  varKD[i,] = 1/pKD
+  varC[i,] = 1/pC
+  varS[i,] = 1/pS
+  varMP[i,] = 1/pMP
+  varV[i,] = 1/pV
+  varSD[i,] = 1/pSD
+}
 
 
 ####### y^rep #####
-yrepM = sapply(1:nrow(datM), function(s) rnorm(10000,rsimM2[datM$fieldDate.num][s], 1/pM[s] ))
-yrepL = sapply(1:nrow(datL), function(s) rnorm(10000,rsimL2[datL$fieldDate.num][s], 1/pL[s] ))
-yrepKD = sapply(1:nrow(datKD), function(s) rnorm(10000,rsimKD2[datKD$fieldDate.num][s], 1/pKD[s] ))
-yrepC = sapply(1:nrow(datC), function(s) rnorm(10000,rsimC2[datC$fieldDate.num][s], 1/pC[s] ))
-yrepS = sapply(1:nrow(datS), function(s) rnorm(10000,rsimS2[datS$fieldDate.num][s], 1/pS[s] ))
-yrepMP = sapply(1:nrow(datMP), function(s) rnorm(10000,rsimMP2[datMP$fieldDate.num][s], 1/pMP[s] ))
-yrepV = sapply(1:nrow(datV), function(s) rnorm(10000,rsimV2[datV$fieldDate.num][s], 1/pV[s] ))
-yrepSD = sapply(1:nrow(datSD), function(s) rnorm(10000,rsimSD2[datSD$fieldDate.num][s], 1/pSD[s] ))
 
-##
-hist(datM$M*100)
-hist(yrepM[1,]*100)
-hist(yrepM[2,]*100)
 
+yrepM = sapply(1:nsim, function(s) rnorm(500,simxM[s,datM$fieldDate.num], varM[s,]))
+yrepL = sapply(1:nsim, function(s) rnorm(500,simxL[s,datL$fieldDate.num], varL[s,] ))
+yrepKD = sapply(1:nsim, function(s) rnorm(500,simxKD[s,datKD$fieldDate.num], varKD[s,] ))
+yrepC = sapply(1:nsim, function(s) rnorm(500,simxC[s,datC$fieldDate.num], varC[s,] ))
+yrepS = sapply(1:nsim, function(s) rnorm(500,simxS[s,datS$fieldDate.num], varS[s,] ))
+yrepMP = sapply(1:nsim, function(s) rnorm(500,simxMP[s,datMP$fieldDate.num], varMP[s,] ))
+yrepV = sapply(1:nsim, function(s) rnorm(500,simxV[s,datV$fieldDate.num], varV[s,] ))
+yrepSD = sapply(1:nsim, function(s) rnorm(500,simxSD[s,datSD$fieldDate.num], varSD[s,] ))
 
 
 ####### y^rep min ##### 
@@ -695,7 +672,7 @@ max_repC = apply(yrepC,2,max)
 max_C = max(datC$C)
 hist(max_repC, main="C", col="chartreuse3", xlab="Maximum observation in replicated data", las=1)
 abline(v=max_C, lty=1, lwd=2)
-sum(ifelse(max_repC<max_C,1,0))/length(max_repC) 
+sum(ifelse(max_repC>=max_C,1,0))/length(max_repC) 
 
 max_repS = apply(yrepS,2,max)
 max_S = max(datS$S)
@@ -725,51 +702,51 @@ par(mfrow=c(1,1))
 ####### y^rep mean #########
 
 par(mfrow=c(3,3))
-mean_repM = apply(yrepM,1,mean)
+mean_repM = apply(yrepM,2,mean)
 mean_M = mean(datM$M)
-hist(mean_repM, main="Histogram of mean replicated M proportion", col="blue", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repM, main="M", col="blue", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_M, lty=1, lwd=2)
 sum(ifelse(mean_repM>=mean_M,1,0))/length(mean_repM) 
 
-mean_repL = apply(yrepL,1,mean)
+mean_repL = apply(yrepL,2,mean)
 mean_L = mean(datL$L)
-hist(mean_repL, main="Histogram of mean replicated L proportion", col="lightblue3", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repL, main="L", col="lightblue3", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_L, lty=1, lwd=2)
 sum(ifelse(mean_repL>=mean_L,1,0))/length(mean_repL) 
 
-mean_repKD = apply(yrepKD,1,mean)
+mean_repKD = apply(yrepKD,2,mean)
 mean_KD = mean(datKD$KD)
-hist(mean_repKD, main="Histogram of mean replicated KD proportion", col="darkblue", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repKD, main="KD", col="darkblue", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_KD, lty=1, lwd=2)
 sum(ifelse(mean_repKD>=mean_KD,1,0))/length(mean_repKD) 
 
-mean_repC = apply(yrepC,1,mean)
+mean_repC = apply(yrepC,2,mean)
 mean_C = mean(datC$C)
-hist(mean_repC, main="Histogram of mean replicated C proportion", col="chartreuse3", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repC, main="C", col="chartreuse3", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_C, lty=1, lwd=2)
 sum(ifelse(mean_repC>=mean_C,1,0))/length(mean_repC) 
 
-mean_repS = apply(yrepS,1,mean)
+mean_repS = apply(yrepS,2,mean)
 mean_S = mean(datS$S)
-hist(mean_repS, main="Histogram of mean replicated S proportion", col="red", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repS, main="S", col="red", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_S, lty=1, lwd=2)
 sum(ifelse(mean_repS>=mean_S,1,0))/length(mean_repS) 
 
-mean_repMP = apply(yrepMP,1,mean)
+mean_repMP = apply(yrepMP,2,mean)
 mean_MP = mean(datMP$MP)
-hist(mean_repMP, main="Histogram of mean replicated MP proportion", col="forestgreen", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repMP, main="MP", col="forestgreen", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_MP, lty=1, lwd=2)
 sum(ifelse(mean_repMP>=mean_MP,1,0))/length(mean_repMP) 
 
-mean_repV = apply(yrepV,1,mean)
+mean_repV = apply(yrepV,2,mean)
 mean_V = mean(datV$V)
-hist(mean_repV, main="Histogram of mean replicated V proportion", col="darkred", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repV, main="V", col="darkred", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_V, lty=1, lwd=2)
 sum(ifelse(mean_repV>=mean_V,1,0))/length(mean_repV) 
 
-mean_repSD = apply(yrepSD,1,mean)
+mean_repSD = apply(yrepSD,2,mean)
 mean_SD = mean(datSD$SD)
-hist(mean_repSD, main="Histogram of mean replicated SD proportion", col="skyblue3", xlab="Mean value of observation in replicated data", las=1)
+hist(mean_repSD, main="SD", col="skyblue3", xlab="Mean value of observation in replicated data", las=1)
 abline(v=mean_SD, lty=1, lwd=2)
 sum(ifelse(mean_repSD>=mean_SD,1,0))/length(mean_repSD) 
 par(mfrow=c(1,1))
