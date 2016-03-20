@@ -53,9 +53,6 @@ plot(POLLS[,1:2], dataList=NULL, lineColors=NULL, lineStyles=NULL, lineWidths=2,
 ######## DENSITIES ########
 
 Lab.palette <- colorRampPalette(c("white", "lightgreen","yellow", "orange", "red"), space = "Lab")
-smoothScatter(x = POLLS[,1], y=POLLS[,2], colramp = Lab.palette, nrpoints=0)
-smoothScatter(POLLS[,1], colramp = Lab.palette, nrpoints=0)
-
 
 dev.off()
 layout(matrix(c(1,0,0,0,0,0,0,
@@ -145,3 +142,57 @@ smoothScatter(x = estPOLLS[,6], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=
 smoothScatter(x = estPOLLS[,6], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
 smoothScatter(x = estPOLLS[,7], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,main=colnames(estPOLLS)[7], xlab="", ylab="", xaxt='n',yaxt='n')
 
+
+############### cov from estimations - basic DLM smooth data#####################
+
+estPOLLS = data.frame(M=meanM2[datM2$fieldDate.num], L=meanL2[datL2$fieldDate.num], KD=meanKD2[datKD2$fieldDate.num], C=meanC2[datC2$fieldDate.num], 
+                      S=meanS2[datS2$fieldDate.num], V=meanV2[datV2$fieldDate.num], MP=meanMP2[datMP2$fieldDate.num], SD=ifelse((datKD2$fieldDate%in%datSD2$fieldDate)==TRUE,meanSD2,NA))
+colnames(estPOLLS) = c("M","L","C","KD","S","V","MP","SD")
+
+
+datKD2$fieldDate[which(!(datKD2$fieldDate%in%datSD2$fieldDate))]
+meanM2.2 = ifelse((datKD2$fieldDate%in%datSD2$fieldDate)==TRUE,meanM2,NA)
+
+c(datKD2$fieldDate[which(!(datKD2$fieldDate%in%datSD2$fieldDate))],datSD2$fieldDate)
+length(datKD2$fieldDate)
+
+dev.off()
+layout(matrix(c(1,0,0,0,0,0,0,
+                2,8,0,0,0,0,0,
+                3,9,14,0,0,0,0,
+                4,10,15,19,0,0,0,
+                5,11,16,20,23,0,0,
+                6,12,17,21,24,26,0,
+                7,13,18,22,25,27,28), nrow=7, ncol=7, byrow = TRUE))
+
+par(mgp=c(0.2,1,0),mai = c(0.05, 0.2, 0.2, 0.15))  
+
+
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,2], colramp = Lab.palette, nrpoints=0, xlab="", ylab=colnames(estPOLLS)[2], xaxt='n',yaxt='n', main=colnames(estPOLLS)[1], font.lab=2)
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,3], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(estPOLLS)[3], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,4], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(estPOLLS)[4], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,5], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(estPOLLS)[5], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(estPOLLS)[6], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(estPOLLS)[7], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = estPOLLS[,1], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab=colnames(estPOLLS)[8], xaxt='n',yaxt='n', font.lab=2)
+smoothScatter(x = estPOLLS[,2], y=estPOLLS[,3], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n', main=colnames(estPOLLS)[2])
+smoothScatter(x = estPOLLS[,2], y=estPOLLS[,4], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,2], y=estPOLLS[,5], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,2], y=estPOLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,2], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,2], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,3], y=estPOLLS[,4], colramp = Lab.palette, nrpoints=0,main=colnames(estPOLLS)[3],xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,3], y=estPOLLS[,5], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,3], y=estPOLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,3], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,3], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,4], y=estPOLLS[,5], colramp = Lab.palette, nrpoints=0,main=colnames(estPOLLS)[4], xlab="",ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,4], y=estPOLLS[,6], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,4], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,4], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,5], y=estPOLLS[,6], colramp = Lab.palette, nrpoints=0,main=colnames(estPOLLS)[5], xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,5], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,5], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,6], y=estPOLLS[,7], colramp = Lab.palette, nrpoints=0,main=colnames(estPOLLS)[6], xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,6], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,xlab="", ylab="", xaxt='n',yaxt='n')
+smoothScatter(x = estPOLLS[,7], y=estPOLLS[,8], colramp = Lab.palette, nrpoints=0,main=colnames(estPOLLS)[7], xlab="", ylab="", xaxt='n',yaxt='n')
