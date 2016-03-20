@@ -570,7 +570,7 @@ varS = matrix (NA, nrow=nsim, ncol=nrow(datS))
 varMP = matrix (NA, nrow=nsim, ncol=nrow(datMP))
 varV = matrix (NA, nrow=nsim, ncol=nrow(datV))
 varSD = matrix (NA, nrow=nsim, ncol=nrow(datSD))
-for(i in 1:nrow(sim.var)){
+for(i in 1:nrow(varM)){
   varM[i,] = 1/pM
   varL[i,] = 1/pL
   varKD[i,] = 1/pKD
@@ -874,7 +874,7 @@ high2 = (meanM + 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$stati
 df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
                 time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
                 low2=low2, high2=high2)
-pM <- ggplot(df) +
+ggplot(df) +
   aes(x = time, y = xM*100) +
   geom_line(col="blue", alpha=1)  +
   geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") + 
