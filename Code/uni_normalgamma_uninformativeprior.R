@@ -21,12 +21,13 @@ end.date = as.Date('2014-09-14') #election day 2014
 
 elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
                         c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
-                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
-                        c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057)))
+                       # ,
+                        #c(0.2333,0.0542,0.0457,0.0611,0.3101,0.0689,0.0572,0.1286)))
 colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
-row.names(elec) = c("2002","2006","2010","2012")
-elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14'))
-n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000))
+row.names(elec) = c("2002","2006","2010") #"2014"
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23')) #,as.Date('2014-09-14')
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000)) #,(0.858*7330*1000)
 ## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
 
 dfM = data.frame(M=elec$M*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
@@ -585,16 +586,27 @@ for(i in 1:nrow(varM)){
 ####### y^rep #####
 
 
-yrepM = sapply(1:nsim, function(s) rnorm(500,simxM[s,datM$fieldDate.num], varM[s,]))
-yrepL = sapply(1:nsim, function(s) rnorm(500,simxL[s,datL$fieldDate.num], varL[s,] ))
-yrepKD = sapply(1:nsim, function(s) rnorm(500,simxKD[s,datKD$fieldDate.num], varKD[s,] ))
-yrepC = sapply(1:nsim, function(s) rnorm(500,simxC[s,datC$fieldDate.num], varC[s,] ))
-yrepS = sapply(1:nsim, function(s) rnorm(500,simxS[s,datS$fieldDate.num], varS[s,] ))
-yrepMP = sapply(1:nsim, function(s) rnorm(500,simxMP[s,datMP$fieldDate.num], varMP[s,] ))
-yrepV = sapply(1:nsim, function(s) rnorm(500,simxV[s,datV$fieldDate.num], varV[s,] ))
-yrepSD = sapply(1:nsim, function(s) rnorm(500,simxSD[s,datSD$fieldDate.num], varSD[s,] ))
+yrepM = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxM[s,datM$fieldDate.num], varM[s,]))
+yrepL = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxL[s,datL$fieldDate.num], varL[s,] ))
+yrepKD = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxKD[s,datKD$fieldDate.num], varKD[s,] ))
+yrepC = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxC[s,datC$fieldDate.num], varC[s,] ))
+yrepS = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxS[s,datS$fieldDate.num], varS[s,] ))
+yrepMP = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxMP[s,datMP$fieldDate.num], varMP[s,] ))
+yrepV = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxV[s,datV$fieldDate.num], varV[s,] ))
+yrepSD = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxSD[s,datSD$fieldDate.num], varSD[s,] ))
 
 
+####### y^rep 2 #######
+
+#y^rep|y~N((A^2/(A^2+1))*y,1+(A^2/(A^2+1))), A^2 comes from theta~N(0,A^2)
+p_bM = NULL
+for(i in 1:100){
+  yrepM = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxM[s,datM$fieldDate.num], varM[s,]))
+  min_repM = apply(yrepM,2,min)
+  min_M = min(datM$M)
+  p_bM[i] = sum(ifelse(min_repM>=min_M,1,0))/length(min_repM)
+}
+hist(p_bM, breaks=30)
 ####### y^rep min ##### 
 
 par(mfrow=c(3,3))
@@ -859,6 +871,8 @@ for(i in unique(list.df$party2)){
   k=k+1
 }
 
+g2[1]
+
 multiplot(g2[[1]],g2[[2]], g2[[3]], g2[[4]],
           g2[[5]],g2[[6]], g2[[7]], g2[[8]], cols=2)
 
@@ -1075,5 +1089,76 @@ ggplot(df) +
 
 
 
+############################################
+################# MSE ######################
+############################################
 
+lM= list()
+lL= list()
+lC= list()
+lKD= list()
+lS= list()
+lMP= list()
+lV= list()
+lSD= list()
+for (i in 1:3){
+  lM[[i]] = outM[[i]][,which(regexpr("xM", colnames(outM[[i]]))==1)]
+  lM[[i]] = lM[[i]][,datM$fieldDate.num]
+  lL[[i]] = outL[[i]][,which(regexpr("xL", colnames(outL[[i]]))==1)]
+  lL[[i]] = lL[[i]][,datL$fieldDate.num]
+  lKD[[i]] = outKD[[i]][,which(regexpr("xKD", colnames(outKD[[i]]))==1)]
+  lKD[[i]] = lKD[[i]][,datKD$fieldDate.num]
+  lC[[i]] = outC[[i]][,which(regexpr("xC", colnames(outC[[i]]))==1)]
+  lC[[i]] = lC[[i]][,datC$fieldDate.num]
+  lS[[i]] = outS[[i]][,which(regexpr("xS", colnames(outS[[i]]))==1)]
+  lS[[i]] = lS[[i]][,datS$fieldDate.num]
+  lMP[[i]] = outMP[[i]][,which(regexpr("xMP", colnames(outMP[[i]]))==1)]
+  lMP[[i]] = lMP[[i]][,datMP$fieldDate.num]
+  lV[[i]] = outV[[i]][,which(regexpr("xV", colnames(outV[[i]]))==1)]
+  lV[[i]] = lV[[i]][,datV$fieldDate.num]
+  lSD[[i]] = outSD[[i]][,which(regexpr("xSD", colnames(outSD[[i]]))==1)]
+  lSD[[i]] = lSD[[i]][,datSD$fieldDate.num]
+}
 
+mseM = list()
+mseL = list()
+mseKD = list()
+mseC = list()
+mseS = list()
+mseMP = list()
+mseV = list()
+mseSD = list()
+for(i in 1:3){
+  for (j in 1:nrow(lM[[i]])){
+    datM$M-lM[[i]][j,]
+    datL$L-lL[[i]][j,]
+    datKD$KD-lKD[[i]][j,]
+    datC$C-lC[[i]][j,]
+    datS$S-lS[[i]][j,]
+    datMP$MP-lMP[[i]][j,]
+    datV$V-lV[[i]][j,]
+    datSD$SD-lSD[[i]][j,]
+  }
+}
+
+MSE.M = list()
+MSE.L = list()
+MSE.KD = list()
+MSE.C = list()
+MSE.S = list()
+MSE.MP = list()
+MSE.V = list()
+MSE.SD = list()
+
+for(i in 1:3){
+  for (j in 1:nrow(lM[[i]])){
+    sum(mseM[[i]]
+    datL$L-lL[[i]][j,]
+    datKD$KD-lKD[[i]][j,]
+    datC$C-lC[[i]][j,]
+    datS$S-lS[[i]][j,]
+    datMP$MP-lMP[[i]][j,]
+    datV$V-lV[[i]][j,]
+    datSD$SD-lSD[[i]][j,]
+  }
+}
