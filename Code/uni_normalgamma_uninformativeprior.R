@@ -599,14 +599,15 @@ yrepSD = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxSD[s,da
 ####### y^rep 2 #######
 
 #y^rep|y~N((A^2/(A^2+1))*y,1+(A^2/(A^2+1))), A^2 comes from theta~N(0,A^2)
-p_bM = NULL
-for(i in 1:100){
-  yrepM = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxM[s,datM$fieldDate.num], varM[s,]))
-  min_repM = apply(yrepM,2,min)
-  min_M = min(datM$M)
-  p_bM[i] = sum(ifelse(min_repM>=min_M,1,0))/length(min_repM)
-}
-hist(p_bM, breaks=30)
+#p_bM = NULL
+
+#for(i in 1:100){
+#  yrepM = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxM[s,datM$fieldDate.num], varM[s,]))
+#  min_repM = apply(yrepM,2,min)
+#  min_M = min(datM$M)
+#  p_bM[i] = sum(ifelse(min_repM>=min_M,1,0))/length(min_repM)
+#}
+#hist(p_bM, breaks=30)
 ####### y^rep min ##### 
 
 par(mfrow=c(3,3))
@@ -850,7 +851,7 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
-
+library(ggplot2)
 k=1
 g2 =list()
 for(i in unique(list.df$party2)){
@@ -875,215 +876,6 @@ g2[1]
 
 multiplot(g2[[1]],g2[[2]], g2[[3]], g2[[4]],
           g2[[5]],g2[[6]], g2[[7]], g2[[8]], cols=2)
-
-
-#### plots M #####
-
-library(ggplot2)
-meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1]
-#meanM = rsimM
-
-low2 = (meanM - 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),2])*100
-high2 = (meanM + 1.96 * sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),2])*100
-df = data.frame(xM = meanM , low=cred_intM[[1]][,1]*100, high=cred_intM[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xM*100) +
-  geom_line(col="blue", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="blue") + 
-  ggtitle(paste("M")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datM$fieldDate.num], 
-                             y=datM$M*100, house=datM$house), aes(x=x, y=y), alpha = 1, color="blue", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for M", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-#### plots L #####
-
-library(ggplot2)
-meanL = sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),1]
-low2 = (meanL - 1.96 * sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),2])*100
-high2 = (meanL + 1.96 * sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),2])*100
-df = data.frame(xL = meanL , low=cred_intL[[1]][,1]*100, high=cred_intL[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-pL <- ggplot(df) +
-  aes(x = time, y = xL*100) +
-  geom_line(col="lightblue3", alpha=1)  +
-  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="lightblue3") +
-  ggtitle(paste("L")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datL$fieldDate.num], 
-                             y=datL$L*100, house=datL$house), aes(x=x, y=y), alpha = 1, color="lightblue3", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for L", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-
-#### plots KD #####
-
-library(ggplot2)
-meanKD = sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),1]
-low2 = (meanKD - 1.96 * sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),2])*100
-high2 = (meanKD + 1.96 * sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),2])*100
-df = data.frame(xKD = meanKD , low=cred_intKD[[1]][,1]*100, high=cred_intKD[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xKD*100) +
-  geom_line(col="darkblue", alpha=1)  +
- # geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkblue") +
-  ggtitle(paste("KD")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datKD$fieldDate.num], 
-                             y=datKD$KD*100, house=datKD$house), aes(x=x, y=y), alpha = 1, color="darkblue", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for KD", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-
-#### plots C #####
-
-library(ggplot2)
-meanC = sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),1]
-low2 = (meanC - 1.96 * sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),2])*100
-high2 = (meanC + 1.96 * sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),2])*100
-df = data.frame(xC = meanC , low=cred_intC[[1]][,1]*100, high=cred_intC[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xC*100) +
-  geom_line(col="chartreuse3", alpha=1)  +
-  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="chartreuse3") +
-  ggtitle(paste("C")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-             length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datC$fieldDate.num], 
-             y=datC$C*100, house=datC$house), aes(x=x, y=y), alpha = 1, color="chartreuse3", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for C", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-
-#### plots S #####
-
-library(ggplot2)
-meanS = sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),1]
-low2 = (meanS - 1.96 * sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),2])*100
-high2 = (meanS + 1.96 * sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),2])*100
-df = data.frame(xS = meanS , low=cred_intS[[1]][,1]*100, high=cred_intS[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xS*100) +
-  geom_line(col="red", alpha=1)  +
-  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="red") +
-  ggtitle(paste("S")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datS$fieldDate.num], 
-                             y=datS$S*100, house=datS$house), aes(x=x, y=y), alpha = 1, color="red", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for S", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-
-#### plots MP #####
-
-library(ggplot2)
-meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),1]
-low2 = (meanMP - 1.96 * sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),2])*100
-high2 = (meanMP + 1.96 * sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),2])*100
-df = data.frame(xMP = meanMP , low=cred_intMP[[1]][,1]*100, high=cred_intMP[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xMP*100) +
-  geom_line(col="forestgreen", alpha=1)  +
-#  geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="forestgreen") +
-  ggtitle(paste("MP")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datMP$fieldDate.num], 
-                             y=datMP$MP*100, house=datMP$house), aes(x=x, y=y), alpha = 1, color="forestgreen", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for MP", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-#### plots V #####
-
-library(ggplot2)
-meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1]
-low2 = (meanV - 1.96 * sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),2])*100
-high2 = (meanV + 1.96 * sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),2])*100
-df = data.frame(xV = meanV , low=cred_intV[[1]][,1]*100, high=cred_intV[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xV*100) +
-  geom_line(col="darkred", alpha=1)  +
-  #geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="darkred") +
-  ggtitle(paste("V")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datV$fieldDate.num], 
-                             y=datV$V*100, house=datV$house), aes(x=x, y=y), alpha = 1, color="darkred", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for V", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
-
-#### plots SD #####
-
-library(ggplot2)
-meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
-low2 = (meanSD - 1.96 * sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),2])*100
-high2 = (meanSD + 1.96 * sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),2])*100
-df = data.frame(xSD = meanSD , low=cred_intSD[[1]][,1]*100, high=cred_intSD[[1]][,2]*100,
-                time=seq(as.Date('2006-09-16'),by='days',length=length(c(0.2623,rep(NA,end.date - orig.date-1)))),
-                low2=low2, high2=high2)
-ggplot(df) +
-  aes(x = time, y = xSD*100) +
-  geom_line(col="skyblue3", alpha=1)  +
- # geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill="skyblue3") +
-  ggtitle(paste("SD")) +
-  geom_point(data=data.frame(x=seq(as.Date('2006-09-16'),by='days',
-                                   length=length(c(0.2623,rep(NA,end.date - orig.date-1))))[datSD$fieldDate.num], 
-                             y=datSD$SD*100, house=datSD$house), aes(x=x, y=y), alpha = 1, color="skyblue3", shape=1, size=1) +    
-  labs(x="Date", y=paste("Support for SD", "(%)")) +
-  theme_bw() +
-  theme(axis.text = element_text(size = 9),
-        legend.key = element_rect(fill = "white"),
-        legend.background = element_rect(fill = "white"),
-        panel.grid.major = element_line(colour = "lightgrey"),
-        panel.grid.minor = element_blank())
-
 
 
 
@@ -1120,45 +912,48 @@ for (i in 1:3){
   lSD[[i]] = lSD[[i]][,datSD$fieldDate.num]
 }
 
-mseM = list()
-mseL = list()
-mseKD = list()
-mseC = list()
-mseS = list()
-mseMP = list()
-mseV = list()
-mseSD = list()
+mseM = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseL = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseKD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseC = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseS = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseMP = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseV = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+mseSD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
 for(i in 1:3){
   for (j in 1:nrow(lM[[i]])){
-    datM$M-lM[[i]][j,]
-    datL$L-lL[[i]][j,]
-    datKD$KD-lKD[[i]][j,]
-    datC$C-lC[[i]][j,]
-    datS$S-lS[[i]][j,]
-    datMP$MP-lMP[[i]][j,]
-    datV$V-lV[[i]][j,]
-    datSD$SD-lSD[[i]][j,]
+    mseM[j,i] = sum((datM$M-lM[[i]][j,])^2)/nrow(datM)
+    mseL[j,i] = sum((datL$L-lL[[i]][j,])^2)/nrow(datL)
+    mseKD[j,i] = sum((datKD$KD-lKD[[i]][j,])^2)/nrow(datKD)
+    mseC[j,i] = sum((datC$C-lC[[i]][j,])^2)/nrow(datC)
+    mseS[j,i] = sum((datS$S-lS[[i]][j,])^2)/nrow(datS)
+    mseMP[j,i] = sum((datMP$MP-lMP[[i]][j,])^2)/nrow(datMP)
+    mseV[j,i] = sum((datV$V-lV[[i]][j,])^2)/nrow(datV)
+    mseSD[j,i] = sum((datSD$SD-lSD[[i]][j,])^2)/nrow(datSD)
   }
 }
 
-MSE.M = list()
-MSE.L = list()
-MSE.KD = list()
-MSE.C = list()
-MSE.S = list()
-MSE.MP = list()
-MSE.V = list()
-MSE.SD = list()
+mean(mseM)
+mean(mseL)
+mean(mseKD)
+mean(mseC)
+mean(mseS)
+mean(mseMP)
+mean(mseV)
+mean(mseSD)
 
-for(i in 1:3){
-  for (j in 1:nrow(lM[[i]])){
-    sum(mseM[[i]]
-    datL$L-lL[[i]][j,]
-    datKD$KD-lKD[[i]][j,]
-    datC$C-lC[[i]][j,]
-    datS$S-lS[[i]][j,]
-    datMP$MP-lMP[[i]][j,]
-    datV$V-lV[[i]][j,]
-    datSD$SD-lSD[[i]][j,]
-  }
-}
+
+t=sample(1:3, 1)
+s=sample(1:10000,1)
+
+MSE.M = sum((datM$M-lM[[t]][s,])^2)/nrow(datM)
+MSE.L = sum((datL$L-lL[[t]][s,])^2)/nrow(datL)
+MSE.KD = sum((datKD$KD-lKD[[t]][s,])^2)/nrow(datKD)
+MSE.C = sum((datC$C-lC[[t]][S,])^2)/nrow(datC)
+MSE.S = sum((datS$S-lS[[t]][S,])^2)/nrow(datS)
+MSE.MP = sum((datMP$MP-lMP[[t]][S,])^2)/nrow(datMP)
+MSE.V = sum((datV$V-lV[[t]][s,])^2)/nrow(datV)
+MSE.SD = sum((datSD$SD-lSD[[t]][s,])^2)/nrow(datSD)
+
+
+
