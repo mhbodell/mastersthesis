@@ -46,7 +46,7 @@ writeLines(jags_M2,con="kalman_M2.bug")
 system.time(jags_mod_M2 <- jags.model("kalman_M2.bug", data = data_M2, n.chains = 3))
 
 ninter = 10000
-system.time(outM2 <- coda.samples(jags_mod_M2,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 1000))
+system.time(outM2 <- coda.samples(jags_mod_M2,variable.names = c("xM", "M"), n.iter = ninter, thin = 20))
 sumM2 = summary(outM2)
 cred_intM2 = HPDinterval(outM2[,which(regexpr("xM", row.names(sumM2$statistics))==1)], 0.95)
 #sumM$quantiles[elec.day[3],c(1,5)] 
@@ -101,7 +101,7 @@ writeLines(jags_L2,con="kalman_L2.bug")
 
 system.time(jags_mod_L2 <- jags.model("kalman_L2.bug", data = data_L2, n.chains = 3))
 
-system.time(outL2 <- coda.samples(jags_mod_L2,variable.names = c("xL", "L"), n.iter = ninter, n.thin = 100))
+system.time(outL2 <- coda.samples(jags_mod_L2,variable.names = c("xL", "L"), n.iter = ninter, thin = 2))
 sumL2 = summary(outL2)
 cred_intL2 = HPDinterval(outL2[,which(regexpr("xL", row.names(sumL2$statistics))==1)], 0.95)
 
@@ -153,7 +153,7 @@ writeLines(jags_KD2,con="kalman_KD2.bug")
 
 system.time(jags_mod_KD2 <- jags.model("kalman_KD2.bug", data = data_KD2, n.chains = 3))
 
-system.time(outKD2 <- coda.samples(jags_mod_KD2,variable.names = c("xKD", "KD"), n.iter = ninter, n.thin = 100))
+system.time(outKD2 <- coda.samples(jags_mod_KD2,variable.names = c("xKD", "KD"), n.iter = ninter, thin = 2))
 sumKD2 = summary(outKD2)
 cred_intKD2 = HPDinterval(outKD2[,which(regexpr("xKD", row.names(sumKD2$statistics))==1)], 0.95)
 
@@ -203,7 +203,7 @@ writeLines(jags_C2,con="kalman_C2.bug")
 
 system.time(jags_mod_C2 <- jags.model("kalman_C2.bug", data = data_C2, n.chains = 3))
 
-system.time(outC2 <- coda.samples(jags_mod_C2,variable.names = c("xC", "C"), n.iter = ninter, n.thin = 100))
+system.time(outC2 <- coda.samples(jags_mod_C2,variable.names = c("xC", "C"), n.iter = ninter, thin = 2))
 sumC2 = summary(outC2)
 cred_intC2 = HPDinterval(outC2[,which(regexpr("xC", row.names(sumC2$statistics))==1)], 0.95)
 
@@ -254,7 +254,7 @@ writeLines(jags_S2,con="kalman_S2.bug")
 
 system.time(jags_mod_S2 <- jags.model("kalman_S2.bug", data = data_S2, n.chains = 3))
 
-system.time(outS2 <- coda.samples(jags_mod_S2,variable.names = c("xS", "S"), n.iter = ninter, n.thin = 100))
+system.time(outS2 <- coda.samples(jags_mod_S2,variable.names = c("xS", "S"), n.iter = ninter, thin = 2))
 sumS2 = summary(outS2)
 cred_intS2 = HPDinterval(outS2[,which(regexpr("xS", row.names(sumS2$statistics))==1)], 0.95)
 
@@ -305,7 +305,7 @@ writeLines(jags_MP2,con="kalman_MP2.bug")
 
 system.time(jags_mod_MP2 <- jags.model("kalman_MP2.bug", data = data_MP2, n.chains = 3))
 
-system.time(outMP2 <- coda.samples(jags_mod_MP2,variable.names = c("xMP", "MP"), n.iter = ninter, n.thin = 100))
+system.time(outMP2 <- coda.samples(jags_mod_MP2,variable.names = c("xMP", "MP"), n.iter = ninter, thin = 2))
 sumMP2 = summary(outMP2)
 cred_intMP2 = HPDinterval(outMP2[,which(regexpr("xMP", row.names(sumMP2$statistics))==1)], 0.95)
 
@@ -356,7 +356,7 @@ writeLines(jags_V2,con="kalman_V2.bug")
 
 system.time(jags_mod_V2 <- jags.model("kalman_V2.bug", data = data_V2, n.chains = 3))
 
-system.time(outV2 <- coda.samples(jags_mod_V2,variable.names = c("xV", "V"), n.iter = ninter, n.thin = 100))
+system.time(outV2 <- coda.samples(jags_mod_V2,variable.names = c("xV", "V"), n.iter = ninter, thin = 2))
 sumV2 = summary(outV2)
 cred_intV2 = HPDinterval(outV2[,which(regexpr("xV", row.names(sumV2$statistics))==1)], 0.95)
 
@@ -407,7 +407,7 @@ writeLines(jags_SD2,con="kalman_SD2.bug")
 
 system.time(jags_mod_SD2 <- jags.model("kalman_SD2.bug", data = data_SD2, n.chains = 3))
 
-system.time(outSD2 <- coda.samples(jags_mod_SD2,variable.names = c("xSD", "SD"), n.iter = ninter, n.thin = 100))
+system.time(outSD2 <- coda.samples(jags_mod_SD2,variable.names = c("xSD", "SD"), n.iter = ninter, thin = 2))
 sumSD2 = summary(outSD2)
 cred_intSD2 = HPDinterval(outSD2[,which(regexpr("xSD", row.names(sumSD2$statistics))==1)], 0.95)
 
@@ -417,8 +417,8 @@ cred_intSD2 = HPDinterval(outSD2[,which(regexpr("xSD", row.names(sumSD2$statisti
 ################ MODEL EVALUATION ###################
 #####################################################
 
-meanM2 = sumM2$statistics[which(regexpr("xM", row.names(sumM2$statistics))==1),1]
-meanL2 = sumL2$statistics[which(regexpr("xL", row.names(sumL2$statistics))==1),1]
+#meanM2 = sumM2$statistics[which(regexpr("xM", row.names(sumM2$statistics))==1),1]
+#meanL2 = sumL2$statistics[which(regexpr("xL", row.names(sumL2$statistics))==1),1]
 meanKD2 = sumKD2$statistics[which(regexpr("xKD", row.names(sumKD2$statistics))==1),1]
 meanC2 = sumC2$statistics[which(regexpr("xC", row.names(sumC2$statistics))==1),1]
 meanS2 = sumS2$statistics[which(regexpr("xS", row.names(sumS2$statistics))==1),1]
@@ -430,41 +430,41 @@ meanSD2 = sumSD2$statistics[which(regexpr("xSD", row.names(sumSD2$statistics))==
 set.seed(901207)
 i = sample(1:3,1)
 #rsimM2 = outM2[[i]]
-#rsimL2 = outL2[[i]]
+rsimL2 = outL2[[i]]
 #rsimKD2 = outKD2[[i]]
 #rsimC2 = outC2[[i]]
 #rsimS2 = outS2[[i]]
 #rsimMP2 = outMP2[[i]]
-rsimV2 = outV2[[i]]
-rsimSD2 = outSD2[[i]]
-nsim = dim(rsimM2)[1]
+#rsimV2 = outV2[[i]]
+#rsimSD2 = outSD2[[i]]
+#nsim = dim(rsimM2)[1]
 #simxM2 = rsimM2[,which(regexpr("xM", colnames(rsimM2))==1)]
-#simxL2 = rsimL2[,which(regexpr("xL", colnames(rsimL2))==1)]
+simxL2 = rsimL2[,which(regexpr("xL", colnames(rsimL2))==1)]
 #simxKD2 = rsimKD2[,which(regexpr("xKD", colnames(rsimKD2))==1)]
 #simxC2 = rsimC2[,which(regexpr("xC", colnames(rsimC2))==1)]
 #simxS2 = rsimS2[,which(regexpr("xS", colnames(rsimS2))==1)]
 #simxMP2 = rsimMP2[,which(regexpr("xMP", colnames(rsimMP2))==1)]
-simxV2 = rsimV2[,which(regexpr("xV", colnames(rsimV2))==1)]
-simxSD2 = rsimSD2[,which(regexpr("xSD", colnames(rsimSD2))==1)]
+#simxV2 = rsimV2[,which(regexpr("xV", colnames(rsimV2))==1)]
+#simxSD2 = rsimSD2[,which(regexpr("xSD", colnames(rsimSD2))==1)]
 
 #varM2 = matrix (NA, nrow=nsim, ncol=nrow(datM2))
-#varL2 = matrix (NA, nrow=nsim, ncol=nrow(datL2))
+varL2 = matrix (NA, nrow=nsim, ncol=nrow(datL2))
 #varKD2 = matrix (NA, nrow=nsim, ncol=nrow(datKD2))
 #varC2 = matrix (NA, nrow=nsim, ncol=nrow(datC2))
 #varS2 = matrix (NA, nrow=nsim, ncol=nrow(datS2))
 #varMP2 = matrix (NA, nrow=nsim, ncol=nrow(datMP2))
-varV2 = matrix (NA, nrow=nsim, ncol=nrow(datV2))
-varSD2 = matrix (NA, nrow=nsim, ncol=nrow(datSD2))
+#varV2 = matrix (NA, nrow=nsim, ncol=nrow(datV2))
+#varSD2 = matrix (NA, nrow=nsim, ncol=nrow(datSD2))
 
 for(i in 1:nrow(varM2)){
- # varM2[i,] = 1/pM2
-  #varL2[i,] = 1/pL2
+  #varM2[i,] = 1/pM2
+  varL2[i,] = 1/pL2
   #varKD2[i,] = 1/pKD2
   #varC2[i,] = 1/pC2
   #varS2[i,] = 1/pS2
   #varMP2[i,] = 1/pMP2
-  varV2[i,] = 1/pV2
-  varSD2[i,] = 1/pSD2
+  #varV2[i,] = 1/pV2
+  #varSD2[i,] = 1/pSD2
 }
 
 #yrepM2 = sapply(1:nsim, function(s) rnorm(500,simxM2[s,datM2$fieldDate.num], varM2[s,]))
@@ -473,8 +473,8 @@ for(i in 1:nrow(varM2)){
 #yrepC2 = sapply(1:nsim, function(s) rnorm(500,simxC2[s,datC2$fieldDate.num], varL2[s,]))
 #yrepS2 = sapply(1:nsim, function(s) rnorm(500,simxS2[s,datS2$fieldDate.num], varS2[s,]))
 #yrepMP2 = sapply(1:nsim, function(s) rnorm(500,simxMP2[s,datMP2$fieldDate.num], varMP2[s,]))
-yrepV2 = sapply(1:nsim, function(s) rnorm(500,simxV2[s,datV2$fieldDate.num], varV2[s,]))
-yrepSD2 = sapply(1:nsim, function(s) rnorm(500,simxSD2[s,datSD2$fieldDate.num], varSD2[s,]))
+#yrepV2 = sapply(1:nsim, function(s) rnorm(500,simxV2[s,datV2$fieldDate.num], varV2[s,]))
+#yrepSD2 = sapply(1:nsim, function(s) rnorm(500,simxSD2[s,datSD2$fieldDate.num], varSD2[s,]))
 
 par(mfrow=c(3,3))
 min_repM2 = apply(yrepM2,2,min)
@@ -719,3 +719,71 @@ for(i in unique(list.df$party2)){
 
 multiplot(g2[[1]],g2[[2]], g2[[3]], g2[[4]],
           g2[[5]],g2[[6]], g2[[7]], g2[[8]], cols=2)
+
+#### MSE #####
+
+lM2= list()
+lL2= list()
+lC2= list()
+lKD2= list()
+lS2= list()
+lMP2= list()
+lV2= list()
+lSD2= list()
+for (i in 1:3){
+  #lM2[[i]] = outM2[[i]][,which(regexpr("xM", colnames(outM2[[i]]))==1)]
+  #lM2[[i]] = lM2[[i]][,datM2$fieldDate.num]
+  lL2[[i]] = outL2[[i]][,which(regexpr("xL", colnames(outL2[[i]]))==1)]
+  lL2[[i]] = lL2[[i]][,datL2$fieldDate.num]
+  #lKD2[[i]] = outKD2[[i]][,which(regexpr("xKD", colnames(outKD2[[i]]))==1)]
+  #lKD2[[i]] = lKD2[[i]][,datKD2$fieldDate.num]
+  #lC2[[i]] = outC2[[i]][,which(regexpr("xC", colnames(outC2[[i]]))==1)]
+  #lC2[[i]] = lC2[[i]][,datC2$fieldDate.num]
+  #lS2[[i]] = outS2[[i]][,which(regexpr("xS", colnames(outS2[[i]]))==1)]
+  #lS2[[i]] = lS2[[i]][,datS2$fieldDate.num]
+  #lMP2[[i]] = outMP2[[i]][,which(regexpr("xMP", colnames(outMP2[[i]]))==1)]
+  #lMP2[[i]] = lMP2[[i]][,datMP2$fieldDate.num]
+  #lV2[[i]] = outV2[[i]][,which(regexpr("xV", colnames(outV2[[i]]))==1)]
+  #lV2[[i]] = lV2[[i]][,datV2$fieldDate.num]
+  #lSD2[[i]] = outSD2[[i]][,which(regexpr("xSD", colnames(outSD2[[i]]))==1)]
+  #lSD2[[i]] = lSD2[[i]][,datSD2$fieldDate.num]
+}
+
+mseM2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+mseL2 = matrix(NA, nrow=nrow(lL2[[1]]), ncol=3)
+mseKD2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+mseC2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+mseS2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+mseMP2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+mseV2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+mseSD2 = matrix(NA, nrow=nrow(lM2[[1]]), ncol=3)
+
+for(i in 1:3){
+  for (j in 1:nrow(lM2[[i]])){
+    #mseM2[j,i] = sum((datM2$M-lM2[[i]][j,])^2)/nrow(datM2)
+    mseL2[j,i] = sum((datL2$L-lL2[[i]][j,])^2)/nrow(datL2)
+    #mseKD[j,i] = sum((datKD$KD-lKD[[i]][j,])^2)/nrow(datKD)
+    #mseC[j,i] = sum((datC$C-lC[[i]][j,])^2)/nrow(datC)
+   # mseS[j,i] = sum((datS$S-lS[[i]][j,])^2)/nrow(datS)
+   # mseMP[j,i] = sum((datMP$MP-lMP[[i]][j,])^2)/nrow(datMP)
+    #mseV[j,i] = sum((datV$V-lV[[i]][j,])^2)/nrow(datV)
+    #mseSD[j,i] = sum((datSD$SD-lSD[[i]][j,])^2)/nrow(datSD)
+  }
+}
+
+mean(mseM2);mean(mseL);mean(mseKD);mean(mseC);mean(mseS);mean(mseMP);mean(mseV);mean(mseSD)
+
+
+t=sample(1:3, 1)
+s=sample(1:10000,1)
+
+MSE.M = sum((datM$M-lM[[t]][s,])^2)/nrow(datM)
+MSE.L = sum((datL$L-lL[[t]][s,])^2)/nrow(datL)
+MSE.KD = sum((datKD$KD-lKD[[t]][s,])^2)/nrow(datKD)
+MSE.C = sum((datC$C-lC[[t]][S,])^2)/nrow(datC)
+MSE.S = sum((datS$S-lS[[t]][S,])^2)/nrow(datS)
+MSE.MP = sum((datMP$MP-lMP[[t]][S,])^2)/nrow(datMP)
+MSE.V = sum((datV$V-lV[[t]][s,])^2)/nrow(datV)
+MSE.SD = sum((datSD$SD-lSD[[t]][s,])^2)/nrow(datSD)
+
+

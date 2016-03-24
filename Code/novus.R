@@ -10,7 +10,7 @@ new.datM2 = datM2 %>%
 
 M.novus = new.datM2$prop
 
-
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
 jags_M.novus ='
 model{
 #observed model
@@ -32,9 +32,17 @@ system.time(jags_mod_M_novus <- jags.model("kalman_M_novus.bug", data = data_M.n
 
 ninter=10000
 
+
+orig.date = as.Date("2006-09-16") #day before election 2011
+end.date = as.Date('2014-09-14') #election day 2014
+ 
+
 system.time(outM.novus <- coda.samples(jags_mod_M_novus,variable.names = c( "M"), n.iter = ninter, n.thin = 100))
 sumM.novus = summary(outM.novus)
 cred_intM.novus = HPDinterval(outM.novus[,which(regexpr("M", row.names(sumM.novus$statistics))==1)], 0.95)
 
 
 plot(sumM.novus$statistics[,1]*100, type="l", ylim=c(20,50))
+
+dfM.Novus = data.frame(party = new.datM2$prop , time=seq(as.Date('2006-09-16'),by='months',length=length(seq(to = end.date, from = orig.date, by='month'))),
+                 party2 = rep("M", length=length(seq(to = end.date, from = orig.date, by='month'))))
