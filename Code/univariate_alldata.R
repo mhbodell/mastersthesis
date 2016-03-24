@@ -71,7 +71,7 @@ system.time(jags_mod_all_M <- jags.model("kalman_M_allData.bug", data = all_data
 
 ninter=10000
 
-system.time(all_outM <- coda.samples(jags_mod_all_M,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 100))
+system.time(all_outM <- coda.samples(jags_mod_all_M,variable.names = c("xM", "M"), n.iter = ninter, thin = 5))
 #system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
 all_sumM = summary(all_outM)
 all_cred_intM = HPDinterval(all_outM[,which(regexpr("xM", row.names(all_sumM$statistics))==1)], 0.95)
@@ -123,7 +123,7 @@ writeLines(all_jags_L,con="all_kalman_L.bug")
 
 system.time(all_jags_mod_L <- jags.model("all_kalman_L.bug", data = all_data_L, n.chain=3))
 
-system.time(all_outL <- coda.samples(all_jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, n.thin = 100))
+system.time(all_outL <- coda.samples(all_jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, thin = 5))
 all_sumL = summary(all_outL)
 all_cred_intL = HPDinterval(all_outL[,which(regexpr("xL", row.names(all_sumL$statistics))==1)], 0.95)
 
@@ -173,7 +173,7 @@ writeLines(jags_KD,con="all_kalman_KD.bug")
 
 system.time(all_jags_mod_KD <- jags.model("all_kalman_KD.bug", data = all_data_KD, n.chain=3))
 
-system.time(all_outKD <- coda.samples(all_jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, n.thin = 100))
+system.time(all_outKD <- coda.samples(all_jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, thin = 5))
 all_sumKD = summary(all_outKD)
 all_cred_intKD = HPDinterval(all_outKD[,which(regexpr("xKD", row.names(all_sumKD$statistics))==1)], 0.95)
 
@@ -224,7 +224,7 @@ writeLines(jags_C,con="all_kalman_C.bug")
 
 system.time(all_jags_mod_C <- jags.model("all_kalman_C.bug", data = all_data_C, n.chain=3))
 
-system.time(all_outC <- coda.samples(all_jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, n.thin = 100))
+system.time(all_outC <- coda.samples(all_jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, thin = 5))
 all_sumC = summary(all_outC)
 all_cred_intC = HPDinterval(all_outC[,which(regexpr("xC", row.names(all_sumC$statistics))==1)], 0.95)
 
@@ -275,7 +275,7 @@ writeLines(jags_S,con="all_kalman_S.bug")
 
 system.time(all_jags_mod_S <- jags.model("all_kalman_S.bug", data = all_data_S, n.chain=3))
 
-system.time(all_outS <- coda.samples(all_jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, n.thin = 100))
+system.time(all_outS <- coda.samples(all_jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, thin = 5))
 all_sumS = summary(all_outS)
 all_cred_intS = HPDinterval(all_outS[,which(regexpr("xS", row.names(all_sumS$statistics))==1)], 0.95)
 
@@ -325,7 +325,7 @@ writeLines(jags_MP,con="all_kalman_MP.bug")
 
 system.time(all_jags_mod_MP <- jags.model("all_kalman_MP.bug", data = all_data_MP, n.chain=3))
 
-system.time(all_outMP <- coda.samples(all_jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, n.thin = 100))
+system.time(all_outMP <- coda.samples(all_jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, thin = 5))
 all_sumMP = summary(all_outMP)
 all_cred_intMP = HPDinterval(all_outMP[,which(regexpr("xMP", row.names(all_sumMP$statistics))==1)], 0.95)
 
@@ -375,7 +375,7 @@ writeLines(jags_V,con="all_kalman_V.bug")
 
 system.time(all_jags_mod_V <- jags.model("all_kalman_V.bug", data = all_data_V, n.chain=3))
 
-system.time(all_outV <- coda.samples(all_jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, n.thin = 100))
+system.time(all_outV <- coda.samples(all_jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, thin = 5))
 all_sumV = summary(all_outV)
 all_cred_intV = HPDinterval(all_outV[,which(regexpr("xV", row.names(all_sumV$statistics))==1)], 0.95)
 
@@ -426,29 +426,16 @@ writeLines(jags_SD,con="all_kalman_SD.bug")
 
 system.time(all_jags_mod_SD <- jags.model("all_kalman_SD.bug", data = all_data_SD, n.chain=3))
 
-system.time(all_outSD <- coda.samples(all_jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, n.thin = 100))
+system.time(all_outSD <- coda.samples(all_jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, thin = 5))
 all_sumSD = summary(all_outSD)
 all_cred_intSD = HPDinterval(all_outSD[,which(regexpr("xSD", row.names(all_sumSD$statistics))==1)], 0.95)
 
 
 
 ######################################################################
-sumM = all_sumM
-outM = all_outM
-sumL = all_sumL
-outL = all_outL
-sumKD = all_sumKD
-outKD = all_outKD
-sumC = all_sumC
-outC = all_outC
-sumS = all_sumS
-outS = all_outS
-sumMP = all_sumMP
-outMP = all_outMP
-sumV = all_sumV
-outV = all_outV
-sumSD = all_sumSD
-outSD = all_outSD
+sumM = all_sumM;outM = all_outM;sumL = all_sumL;outL = all_outL;sumKD = all_sumKD;outKD = all_outKD
+sumC = all_sumC;outC = all_outC;sumS = all_sumS;outS = all_outS;sumMP = all_sumMP;outMP = all_outMP
+sumV = all_sumV;outV = all_outV;sumSD = all_sumSD;outSD = all_outSD
 
 
 meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1]
@@ -759,11 +746,6 @@ pointsSD = data.frame(x=seq(as.Date(datSD$collectPeriodFrom[1]-1),by='days',leng
                       y=datSD$SD[-1]*100, house=datSD$house[-1], party=rep("SD",datSD$fieldDate.num[length(datSD$fieldDate.num)])[datSD$fieldDate.num[-1]])
 
 
-
-
-
-cols = c("blue", "lightblue3", "darkblue","chartreuse3","red","forestgreen","darkred","skyblue3" )
-
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)
   plots <- c(list(...), plotlist)
@@ -974,41 +956,23 @@ par(mfrow=c(1,1))
 
 
 
-mean(mseM)
-mean(mseL)
-mean(mseKD)
-mean(mseC)
-mean(mseS)
-mean(mseMP)
-mean(mseV)
-mean(mseSD)
+mean(mseM);mean(mseL);mean(mseKD);mean(mseC);mean(mseS);mean(mseMP);mean(mseV);mean(mseSD)
 
 
 t=sample(1:3, 1)
 s=sample(1:10000,1)
-
-MSE.M = sum((datM$M-lM[[t]][s,])^2)/nrow(datM)
-MSE.L = sum((datL$L-lL[[t]][s,])^2)/nrow(datL)
-MSE.KD = sum((datKD$KD-lKD[[t]][s,])^2)/nrow(datKD)
-MSE.C = sum((datC$C-lC[[t]][s,])^2)/nrow(datC)
-MSE.S = sum((datS$S-lS[[t]][s,])^2)/nrow(datS)
-MSE.MP = sum((datMP$MP-lMP[[t]][s,])^2)/nrow(datMP)
-MSE.V = sum((datV$V-lV[[t]][s,])^2)/nrow(datV)
-MSE.SD = sum((datSD$SD-lSD[[t]][s,])^2)/nrow(datSD)
+sum((datM$M-lM[[t]][s,])^2)/nrow(datM); sum((datL$L-lL[[t]][s,])^2)/nrow(datL);sum((datKD$KD-lKD[[t]][s,])^2)/nrow(datKD)
+sum((datC$C-lC[[t]][s,])^2)/nrow(datC);sum((datS$S-lS[[t]][s,])^2)/nrow(datS):sum((datMP$MP-lMP[[t]][s,])^2)/nrow(datMP)
+sum((datV$V-lV[[t]][s,])^2)/nrow(datV);sum((datSD$SD-lSD[[t]][s,])^2)/nrow(datSD)
 
 ############################################################
 #######################   MAE   ############################
 ############################################################
 
 
-maeM = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeL = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeKD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeC = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeS = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeMP = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeV = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeSD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+maeM = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeL = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeKD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+maeC = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeS = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeMP = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
+maeV = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeSD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
 for(i in 1:3){
   for (j in 1:nrow(lM[[i]])){
     maeM[j,i] = sum(abs(datM$M-lM[[i]][j,]))/nrow(datM)
@@ -1045,44 +1009,63 @@ mean(maeM);mean(maeL);mean(maeKD);mean(maeC);mean(maeS);mean(maeMP);mean(maeV);m
 #t=sample(1:3, 1)
 #s=sample(1:10000,1)
 
-MAE.M = sum(abs(datM$M-lM[[t]][s,]))/nrow(datM)
-MAE.L = sum(abs(datL$L-lL[[t]][s,]))/nrow(datL)
-MAE.KD = sum(abs(datKD$KD-lKD[[t]][s,]))/nrow(datKD)
-MAE.C = sum(abs(datC$C-lC[[t]][s,]))/nrow(datC)
-MAE.S = sum(abs(datS$S-lS[[t]][s,]))/nrow(datS)
-MAE.MP = sum(abs(datMP$MP-lMP[[t]][s,]))/nrow(datMP)
-MAE.V = sum(abs(datV$V-lV[[t]][s,]))/nrow(datV)
-MAE.SD = sum(abs(datSD$SD-lSD[[t]][s,]))/nrow(datSD)
-
-MAE.M;MAE.L;MAE.KD;MAE.C;MAE.S;MAE.MP;MAE.V;MAE.SD
+sum(abs(datM$M-lM[[t]][s,]))/nrow(datM);sum(abs(datL$L-lL[[t]][s,]))/nrow(datL);sum(abs(datKD$KD-lKD[[t]][s,]))/nrow(datKD)
+sum(abs(datC$C-lC[[t]][s,]))/nrow(datC);sum(abs(datS$S-lS[[t]][s,]))/nrow(datS);sum(abs(datMP$MP-lMP[[t]][s,]))/nrow(datMP)
+sum(abs(datV$V-lV[[t]][s,]))/nrow(datV);sum(abs(datSD$SD-lSD[[t]][s,]))/nrow(datSD)
 
 
+################################################
+####### predicting election outcome 2010 #######
+################################################
 
-################################################################
-############ estimating the elections results ##################
-################################################################
 
-orig.dateE1= as.Date(datM$collectPeriodFrom[1]-1)
-end.date= datM$collectPeriodTo[length(datM$collectPeriodTo)]
+############# M ###################
+
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
+
+datM = na.omit(polls[,c('M','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datM$house = factor(datM$house)
+datM = datM[order(datM$collectPeriodFrom),]
+datM$collectPeriodFrom = as.Date(datM$collectPeriodFrom)
+datM$collectPeriodTo = as.Date(datM$collectPeriodTo)
+datM$PublDate = as.Date(datM$PublDate)
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286)))
+
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2014") #
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000)) #
+## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfM = data.frame(M=elec$M*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datM = rbind(datM, dfM)
+datM = datM[order(datM$collectPeriodFrom),]
+orig.date = as.Date(datM$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datM = datM[-which(datM$collectPeriodTo>end.date),]
 
 datM$collectPeriodFrom.num = julian(datM$collectPeriodFrom,origin=orig.date) #days since origin
 datM$collectPeriodTo.num = julian(datM$collectPeriodTo,origin=orig.date) #days since origin
 datM$fieldDate.num = floor((datM$collectPeriodFrom.num + datM$collectPeriodTo.num) / 2)
 datM$M = datM$M/100
+datM = datM[-nrow(datM),]
 
-all_jags_M ='
+library(rjags)
+e2010jags_M ='
 model{
-
 #observed model
 for(i in 1:npolls){
 M[i] ~ dnorm(xM[day[i]],precM[i])
 }
-
-#dynamic model 
+#dynamic model
 for(i in 2:nperiods){
 xM[i] ~ dnorm(xM[i-1],phiM)
 }
-
 ## priors
 xM[1] ~ dunif(0,1)
 epsM ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
@@ -1090,20 +1073,827 @@ phiM <-1/epsM
 }
 '
 
-
 pM = (1 / (datM$M*(1-datM$M)/datM$n)) #binomial
 #pM = (1 / (datM$M*(1-datM$M)*datM$n)) #multinomial
-all_data_M = list(M = datM$M, precM = pM, xM = rep(NA,end.date - orig.date),
-                  day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
-writeLines(all_jags_M,con="kalman_M_allData.bug")
+e2010data_M = list(M = datM$M, precM = pM, xM = rep(NA,end.date - orig.date),
+                   day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
+writeLines(e2010jags_M,con="kalman_M_allData.bug")
 
-system.time(jags_mod_all_M <- jags.model("kalman_M_allData.bug", data = all_data_M, n.chain=3))
+system.time(jags_mod_e2010M <- jags.model("kalman_M_allData.bug", data = e2010data_M, n.chain=3))
 
 ninter=10000
 
-system.time(all_outM <- coda.samples(jags_mod_all_M,variable.names = c("xM", "M"), n.iter = ninter, n.thin = 100))
+system.time(e2010outM <- coda.samples(jags_mod_e2010M,variable.names = c("xM", "M"), n.iter = ninter, thin = 5))
 #system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
-all_sumM = summary(all_outM)
-all_cred_intM = HPDinterval(all_outM[,which(regexpr("xM", row.names(all_sumM$statistics))==1)], 0.95)
-#sumM$quantiles[elec.day[3],c(1,5)] 
+e2010sumM = summary(e2010outM)
+e2010cred_intM = HPDinterval(e2010outM[,which(regexpr("xM", row.names(e2010sumM$statistics))==1)], 0.95)
+#sumM$quantiles[elec.day[3],c(1,5)]
+
+############ L #################
+datL = na.omit(polls[,c('FP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+colnames(datL)[1] <- 'L'
+datL$house = factor(datL$house)
+datL = datL[order(datL$collectPeriodFrom),]
+datL$collectPeriodFrom = as.Date(datL$collectPeriodFrom)
+datL$collectPeriodTo = as.Date(datL$collectPeriodTo)
+datL$PublDate = as.Date(datL$PublDate)
+dfL = data.frame(L=elec$L*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datL = rbind(datL, dfL)
+datL = datL[order(datL$collectPeriodFrom),]
+orig.date = as.Date(datL$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datL = datL[-which(datL$collectPeriodTo>end.date),]
+
+datL$collectPeriodFrom.num = julian(datL$collectPeriodFrom,origin=orig.date) #days since origin
+datL$collectPeriodTo.num = julian(datL$collectPeriodTo,origin=orig.date) #days since origin
+datL$fieldDate.num = floor((datL$collectPeriodFrom.num + datL$collectPeriodTo.num) / 2)
+datL$L = datL$L/100
+datL = datL[-nrow(datL),]
+
+e2010jags_L ='
+model{
+#observed model
+for(i in 1:npolls){
+L[i] ~ dnorm(xL[day[i]],precL[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xL[i] ~ dnorm(xL[i-1],phiL)
+}
+## priors
+xL[1] ~ dunif(0,1)
+epsL ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiL <- 1/epsL
+}
+'
+
+pL = (1 / (datL$L*(1-datL$L)/datL$n)) #binomial
+#pL = (1 / (datL$L*(1-datL$L)*datL$n)) #multinomial
+e2010data_L = list(L = datL$L, precL = pL, xL = rep(NA,end.date - orig.date),
+                   day = datL$fieldDate.num, npolls = nrow(datL), nperiods = as.numeric(end.date - orig.date))
+writeLines(e2010jags_L,con="e2010kalman_L.bug")
+
+system.time(e2010jags_mod_L <- jags.model("e2010kalman_L.bug", data = e2010data_L, n.chain=3))
+
+system.time(e2010outL <- coda.samples(e2010jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, thin = 5))
+e2010sumL = summary(e2010outL)
+e2010cred_intL = HPDinterval(e2010outL[,which(regexpr("xL", row.names(e2010sumL$statistics))==1)], 0.95)
+
+########### KD #############
+
+datKD = na.omit(polls[,c('KD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datKD$house = factor(datKD$house)
+datKD = datKD[order(datKD$collectPeriodFrom),]
+datKD$collectPeriodFrom = as.Date(datKD$collectPeriodFrom)
+datKD$collectPeriodTo = as.Date(datKD$collectPeriodTo)
+datKD$PublDate = as.Date(datKD$PublDate)
+dfKD = data.frame(KD=elec$KD*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datKD = rbind(datKD, dfKD)
+datKD = datKD[order(datKD$collectPeriodFrom),]
+orig.date = as.Date(datKD$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datKD = datKD[-which(datKD$collectPeriodTo>end.date),]
+
+datKD$collectPeriodFrom.num = julian(datKD$collectPeriodFrom,origin=orig.date) #days since origin
+datKD$collectPeriodTo.num = julian(datKD$collectPeriodTo,origin=orig.date) #days since origin
+datKD$fieldDate.num = floor((datKD$collectPeriodFrom.num + datKD$collectPeriodTo.num) / 2)
+datKD$KD = datKD$KD/100
+datKD = datKD[-nrow(datKD),]
+
+jags_KD ='
+model{
+#observed model
+for(i in 1:npolls){
+KD[i] ~ dnorm(xKD[day[i]],precKD[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xKD[i] ~ dnorm(xKD[i-1],phiKD)
+}
+## priors
+xKD[1] ~ dunif(0,1)
+epsKD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiKD <- 1/epsKD
+}
+'
+
+pKD = (1 / (datKD$KD*(1-datKD$KD)/datKD$n)) #binomial
+#pKD = (1 / (datKD$KD*(1-datKD$KD)*datKD$n)) #multinomial
+e2010data_KD = list(KD = datKD$KD, precKD = pKD, xKD = rep(NA,end.date - orig.date),
+                    day = datKD$fieldDate.num, npolls = nrow(datKD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_KD,con="e2010kalman_KD.bug")
+
+system.time(e2010jags_mod_KD <- jags.model("e2010kalman_KD.bug", data = e2010data_KD, n.chain=3))
+
+system.time(e2010outKD <- coda.samples(e2010jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, thin = 5))
+e2010sumKD = summary(e2010outKD)
+e2010cred_intKD = HPDinterval(e2010outKD[,which(regexpr("xKD", row.names(e2010sumKD$statistics))==1)], 0.95)
+
+
+########### C #############
+datC = na.omit(polls[,c('C','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datC$house = factor(datC$house)
+datC = datC[order(datC$collectPeriodFrom),]
+datC$collectPeriodFrom = as.Date(datC$collectPeriodFrom)
+datC$collectPeriodTo = as.Date(datC$collectPeriodTo)
+datC$PublDate = as.Date(datC$PublDate)
+dfC = data.frame(C=elec$C*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datC = rbind(datC, dfC)
+datC = datC[order(datC$collectPeriodFrom),]
+orig.date = as.Date(datC$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datC = datC[-which(datC$collectPeriodTo>end.date),]
+
+datC$collectPeriodFrom.num = julian(datC$collectPeriodFrom,origin=orig.date) #days since origin
+datC$collectPeriodTo.num = julian(datC$collectPeriodTo,origin=orig.date) #days since origin
+datC$fieldDate.num = floor((datC$collectPeriodFrom.num + datC$collectPeriodTo.num) / 2)
+datC$C = datC$C/100
+datC = datC[-nrow(datC),]
+
+jags_C ='
+model{
+#observed model
+for(i in 1:npolls){
+C[i] ~ dnorm(xC[day[i]],precC[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xC[i] ~ dnorm(xC[i-1],phiC)
+}
+## priors
+xC[1] ~ dunif(0,1)
+epsC ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiC <- 1/epsC
+}
+'
+
+pC = (1 / (datC$C*(1-datC$C)/datC$n)) #binomial
+#pC = (1 / (datC$C*(1-datC$C)*datC$n)) #multinomial
+e2010data_C = list(C = datC$C, precC = pC, xC = rep(NA,end.date - orig.date),
+                   day = datC$fieldDate.num, npolls = nrow(datC), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_C,con="e2010kalman_C.bug")
+
+system.time(e2010jags_mod_C <- jags.model("e2010kalman_C.bug", data = e2010data_C, n.chain=3))
+
+system.time(e2010outC <- coda.samples(e2010jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, thin = 5))
+e2010sumC = summary(e2010outC)
+e2010cred_intC = HPDinterval(e2010outC[,which(regexpr("xC", row.names(e2010sumC$statistics))==1)], 0.95)
+
+
+########### S #############
+
+datS = na.omit(polls[,c('S','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datS$house = factor(datS$house)
+datS = datS[order(datS$collectPeriodFrom),]
+datS$collectPeriodFrom = as.Date(datS$collectPeriodFrom)
+datS$collectPeriodTo = as.Date(datS$collectPeriodTo)
+datS$PublDate = as.Date(datS$PublDate)
+dfS = data.frame(S=elec$S*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datS = rbind(datS, dfS)
+datS = datS[order(datS$collectPeriodFrom),]
+orig.date = as.Date(datS$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datS = datS[-which(datS$collectPeriodTo>end.date),]
+
+datS$collectPeriodFrom.num = julian(datS$collectPeriodFrom,origin=orig.date) #days since origin
+datS$collectPeriodTo.num = julian(datS$collectPeriodTo,origin=orig.date) #days since origin
+datS$fieldDate.num = floor((datS$collectPeriodFrom.num + datS$collectPeriodTo.num) / 2)
+datS$S = datS$S/100
+datS = datS[-nrow(datS),]
+
+jags_S ='
+model{
+#observed model
+for(i in 1:npolls){
+S[i] ~ dnorm(xS[day[i]],precS[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xS[i] ~ dnorm(xS[i-1],phiS)
+}
+## priors
+xS[1] ~ dunif(0,1)
+epsS ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiS <- 1/epsS
+}
+'
+
+pS = (1 / (datS$S*(1-datS$S)/datS$n)) #binomial
+#pS = (1 / (datS$S*(1-datS$S)*datS$n)) #multinomial
+e2010data_S = list(S = datS$S, precS = pS, xS = rep(NA,end.date - orig.date),
+                   day = datS$fieldDate.num, npolls = nrow(datS), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_S,con="e2010kalman_S.bug")
+
+system.time(e2010jags_mod_S <- jags.model("e2010kalman_S.bug", data = e2010data_S, n.chain=3))
+
+system.time(e2010outS <- coda.samples(e2010jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, thin = 5))
+e2010sumS = summary(e2010outS)
+e2010cred_intS = HPDinterval(e2010outS[,which(regexpr("xS", row.names(e2010sumS$statistics))==1)], 0.95)
+
+########### MP #############
+
+datMP = na.omit(polls[,c('MP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datMP$house = factor(datMP$house)
+datMP = datMP[order(datMP$collectPeriodFrom),]
+datMP$collectPeriodFrom = as.Date(datMP$collectPeriodFrom)
+datMP$collectPeriodTo = as.Date(datMP$collectPeriodTo)
+datMP$PublDate = as.Date(datMP$PublDate)
+dfMP = data.frame(MP=elec$MP*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datMP = rbind(datMP, dfMP)
+datMP = datMP[order(datMP$collectPeriodFrom),]
+orig.date = as.Date(datMP$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datMP = datMP[-which(datMP$collectPeriodTo>end.date),]
+
+datMP$collectPeriodFrom.num = julian(datMP$collectPeriodFrom,origin=orig.date) #days since origin
+datMP$collectPeriodTo.num = julian(datMP$collectPeriodTo,origin=orig.date) #days since origin
+datMP$fieldDate.num = floor((datMP$collectPeriodFrom.num + datMP$collectPeriodTo.num) / 2)
+datMP$MP = datMP$MP/100
+datMP = datMP[-nrow(datMP),]
+
+jags_MP ='
+model{
+#observed model
+for(i in 1:npolls){
+MP[i] ~ dnorm(xMP[day[i]],precMP[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xMP[i] ~ dnorm(xMP[i-1],phiMP)
+}
+## priors
+xMP[1] ~ dunif(0,1)
+epsMP ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiMP <- 1/epsMP
+}
+'
+
+pMP = (1 / (datMP$MP*(1-datMP$MP)/datMP$n)) #binomial
+#pMP = (1 / (datMP$MP*(1-datMP$MP)*datMP$n)) #multinomial
+e2010data_MP = list(MP = datMP$MP, precMP = pMP, xMP = rep(NA,end.date - orig.date),
+                    day = datMP$fieldDate.num, npolls = nrow(datMP), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_MP,con="e2010kalman_MP.bug")
+
+system.time(e2010jags_mod_MP <- jags.model("e2010kalman_MP.bug", data = e2010data_MP, n.chain=3))
+
+system.time(e2010outMP <- coda.samples(e2010jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, thin = 5))
+e2010sumMP = summary(e2010outMP)
+e2010cred_intMP = HPDinterval(e2010outMP[,which(regexpr("xMP", row.names(e2010sumMP$statistics))==1)], 0.95)
+
+########### V #############
+
+datV = na.omit(polls[,c('V','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datV$house = factor(datV$house)
+datV = datV[order(datV$collectPeriodFrom),]
+datV$collectPeriodFrom = as.Date(datV$collectPeriodFrom)
+datV$collectPeriodTo = as.Date(datV$collectPeriodTo)
+datV$PublDate = as.Date(datV$PublDate)
+dfV = data.frame(V=elec$V*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datV = rbind(datV, dfV)
+datV = datV[order(datV$collectPeriodFrom),]
+orig.date = as.Date(datV$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datV = datV[-which(datV$collectPeriodTo>end.date),]
+
+datV$collectPeriodFrom.num = julian(datV$collectPeriodFrom,origin=orig.date) #days since origin
+datV$collectPeriodTo.num = julian(datV$collectPeriodTo,origin=orig.date) #days since origin
+datV$fieldDate.num = floor((datV$collectPeriodFrom.num + datV$collectPeriodTo.num) / 2)
+datV$V = datV$V/100
+datV = datV[-nrow(datV),]
+
+jags_V ='
+model{
+#observed model
+for(i in 1:npolls){
+V[i] ~ dnorm(xV[day[i]],precV[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xV[i] ~ dnorm(xV[i-1],phiV)
+}
+## priors
+xV[1] ~ dunif(0,1)
+epsV ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiV <- 1/epsV
+}
+'
+
+pV = (1 / (datV$V*(1-datV$V)/datV$n)) #binomial
+#pV = (1 / (datV$V*(1-datV$V)*datV$n)) #multinomial
+e2010data_V = list(V = datV$V, precV = pV, xV = rep(NA,end.date - orig.date),
+                   day = datV$fieldDate.num, npolls = nrow(datV), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_V,con="e2010kalman_V.bug")
+
+system.time(e2010jags_mod_V <- jags.model("e2010kalman_V.bug", data = e2010data_V, n.chain=3))
+
+system.time(e2010outV <- coda.samples(e2010jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, thin = 5))
+e2010sumV = summary(e2010outV)
+e2010cred_intV = HPDinterval(e2010outV[,which(regexpr("xV", row.names(e2010sumV$statistics))==1)], 0.95)
+
+########### SD #############
+
+datSD = na.omit(polls[,c('SD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datSD$house = factor(datSD$house)
+datSD = datSD[order(datSD$collectPeriodFrom),]
+datSD$collectPeriodFrom = as.Date(datSD$collectPeriodFrom)
+datSD$collectPeriodTo = as.Date(datSD$collectPeriodTo)
+datSD$PublDate = as.Date(datSD$PublDate)
+elecSD = data.frame(elec[-1,])
+dfSD = data.frame(SD=elecSD$SD*100, collectPeriodFrom=elecSD$Date, collectPeriodTo=elecSD$Date, n=n[-1], PublDate=elecSD$Date, house="Election")
+datSD = rbind(datSD, dfSD)
+datSD = datSD[order(datSD$collectPeriodFrom),]
+orig.date = as.Date(datSD$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[3])
+datSD = datSD[-which(datSD$collectPeriodTo>end.date),]
+
+datSD$collectPeriodFrom.num = julian(datSD$collectPeriodFrom,origin=orig.date) #days since origin
+datSD$collectPeriodTo.num = julian(datSD$collectPeriodTo,origin=orig.date) #days since origin
+datSD$fieldDate.num = floor((datSD$collectPeriodFrom.num + datSD$collectPeriodTo.num) / 2)
+datSD$SD = datSD$SD/100
+datSD = datSD[-nrow(datSD),]
+
+jags_SD ='
+model{
+#observed model
+for(i in 1:npolls){
+SD[i] ~ dnorm(xSD[day[i]],precSD[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xSD[i] ~ dnorm(xSD[i-1],phiSD)
+}
+## priors
+xSD[1] ~ dunif(0,1)
+epsSD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiSD <- 1/epsSD
+}
+'
+pSD = (1 / (datSD$SD*(1-datSD$SD)/datSD$n)) #binomial
+#pSD = (1 / (datSD$SD*(1-datSD$SD)*datSD$n)) #multinomial
+e2010data_SD = list(SD = datSD$SD, precSD = pSD, xSD = rep(NA,end.date - orig.date),
+                    day = datSD$fieldDate.num, npolls = nrow(datSD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_SD,con="e2010kalman_SD.bug")
+
+system.time(e2010jags_mod_SD <- jags.model("e2010kalman_SD.bug", data = e2010data_SD, n.chain=3))
+
+system.time(e2010outSD <- coda.samples(e2010jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, thin = 5))
+e2010sumSD = summary(e2010outSD)
+e2010cred_intSD = HPDinterval(e2010outSD[,which(regexpr("xSD", row.names(e2010sumSD$statistics))==1)], 0.95)
+
+#################################
+
+sumM = e2010sumM;outM = e2010outM;sumL = e2010sumL;outL = e2010outL;sumKD = e2010sumKD
+outKD = e2010outKD;sumC = e2010sumC;outC = e2010outC;sumS = e2010sumS;outS = e2010outS
+sumMP = e2010sumMP;outMP = e2010outMP;sumV = e2010sumV;outV = e2010outV;sumSD = e2010sumSD;outSD = e2010outSD
+
+meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1];meanL = sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),1]
+meanKD = sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),1];meanC = sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),1]
+meanS = sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),1];meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),1]
+meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1];meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
+
+meanM[length(meanM)]; e2010cred_intM[[1]][nrow(e2010cred_intM[[1]]),];meanL[length(meanL)]; e2010cred_intL[[1]][nrow(e2010cred_intL[[1]]),]
+meanKD[length(meanKD)]; e2010cred_intKD[[1]][nrow(e2010cred_intKD[[1]]),];meanC[length(meanC)]; e2010cred_intC[[1]][nrow(e2010cred_intC[[1]]),]
+meanS[length(meanS)]; e2010cred_intS[[1]][nrow(e2010cred_intS[[1]]),];meanMP[length(meanMP)]; e2010cred_intMP[[1]][nrow(e2010cred_intMP[[1]]),]
+meanV[length(meanV)]; e2010cred_intV[[1]][nrow(e2010cred_intV[[1]]),];meanSD[length(meanSD)]; e2010cred_intSD[[1]][nrow(e2010cred_intSD[[1]]),]
+
+
+
+################################################
+####### predicting election outcome 2014 #######
+################################################
+
+############# M ###################
+
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
+
+datM = na.omit(polls[,c('M','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datM$house = factor(datM$house)
+datM = datM[order(datM$collectPeriodFrom),]
+datM$collectPeriodFrom = as.Date(datM$collectPeriodFrom)
+datM$collectPeriodTo = as.Date(datM$collectPeriodTo)
+datM$PublDate = as.Date(datM$PublDate)
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
+                        c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286)))
+
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2002","2006","2010","2014") #
+elec$Date = c(as.Date("2002-09-12"), as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #
+n=c((0.801*6722*1000),(0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000)) #
+## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+
+dfM = data.frame(M=elec$M*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datM = rbind(datM, dfM)
+datM = datM[order(datM$collectPeriodFrom),]
+orig.date = as.Date(datM$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datM = datM[-which(datM$collectPeriodTo>end.date),]
+
+datM$collectPeriodFrom.num = julian(datM$collectPeriodFrom,origin=orig.date) #days since origin
+datM$collectPeriodTo.num = julian(datM$collectPeriodTo,origin=orig.date) #days since origin
+datM$fieldDate.num = floor((datM$collectPeriodFrom.num + datM$collectPeriodTo.num) / 2)
+datM$M = datM$M/100
+datM = datM[-nrow(datM),]
+
+library(rjags)
+e2014jags_M ='
+model{
+#observed model
+for(i in 1:npolls){
+M[i] ~ dnorm(xM[day[i]],precM[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xM[i] ~ dnorm(xM[i-1],phiM)
+}
+## priors
+xM[1] ~ dunif(0,1)
+epsM ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiM <-1/epsM
+}
+'
+
+pM = (1 / (datM$M*(1-datM$M)/datM$n)) #binomial
+#pM = (1 / (datM$M*(1-datM$M)*datM$n)) #multinomial
+e2014data_M = list(M = datM$M, precM = pM, xM = rep(NA,end.date - orig.date),
+                   day = datM$fieldDate.num, npolls = nrow(datM), nperiods = as.numeric(end.date - orig.date))
+writeLines(e2014jags_M,con="kalman_M_allData.bug")
+
+system.time(jags_mod_e2014M <- jags.model("kalman_M_allData.bug", data = e2014data_M, n.chain=3))
+
+system.time(e2014outM <- coda.samples(jags_mod_e2014M,variable.names = c("xM", "M"), n.iter = ninter, thin = 5))
+#system.time(outM_jags <- jags.samples(jags_mod_M,variable.names = c("xM", "M","phiM" ), n.iter = 5000, n.thin = 10))
+e2014sumM = summary(e2014outM)
+e2014cred_intM = HPDinterval(e2014outM[,which(regexpr("xM", row.names(e2014sumM$statistics))==1)], 0.95)
+
+############ L #################
+datL = na.omit(polls[,c('FP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+colnames(datL)[1] <- 'L'
+datL$house = factor(datL$house)
+datL = datL[order(datL$collectPeriodFrom),]
+datL$collectPeriodFrom = as.Date(datL$collectPeriodFrom)
+datL$collectPeriodTo = as.Date(datL$collectPeriodTo)
+datL$PublDate = as.Date(datL$PublDate)
+dfL = data.frame(L=elec$L*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datL = rbind(datL, dfL)
+datL = datL[order(datL$collectPeriodFrom),]
+orig.date = as.Date(datL$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datL = datL[-which(datL$collectPeriodTo>end.date),]
+
+datL$collectPeriodFrom.num = julian(datL$collectPeriodFrom,origin=orig.date) #days since origin
+datL$collectPeriodTo.num = julian(datL$collectPeriodTo,origin=orig.date) #days since origin
+datL$fieldDate.num = floor((datL$collectPeriodFrom.num + datL$collectPeriodTo.num) / 2)
+datL$L = datL$L/100
+datL = datL[-nrow(datL),]
+
+e2014jags_L ='
+model{
+#observed model
+for(i in 1:npolls){
+L[i] ~ dnorm(xL[day[i]],precL[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xL[i] ~ dnorm(xL[i-1],phiL)
+}
+## priors
+xL[1] ~ dunif(0,1)
+epsL ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiL <- 1/epsL
+}
+'
+
+pL = (1 / (datL$L*(1-datL$L)/datL$n)) #binomial
+#pL = (1 / (datL$L*(1-datL$L)*datL$n)) #multinomial
+e2014data_L = list(L = datL$L, precL = pL, xL = rep(NA,end.date - orig.date),
+                   day = datL$fieldDate.num, npolls = nrow(datL), nperiods = as.numeric(end.date - orig.date))
+writeLines(e2014jags_L,con="e2014kalman_L.bug")
+
+system.time(e2014jags_mod_L <- jags.model("e2014kalman_L.bug", data = e2014data_L, n.chain=3))
+
+system.time(e2014outL <- coda.samples(e2014jags_mod_L,variable.names = c("xL", "L"), n.iter = ninter, thin = 5))
+e2014sumL = summary(e2014outL)
+e2014cred_intL = HPDinterval(e2014outL[,which(regexpr("xL", row.names(e2014sumL$statistics))==1)], 0.95)
+
+########### KD #############
+
+datKD = na.omit(polls[,c('KD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datKD$house = factor(datKD$house)
+datKD = datKD[order(datKD$collectPeriodFrom),]
+datKD$collectPeriodFrom = as.Date(datKD$collectPeriodFrom)
+datKD$collectPeriodTo = as.Date(datKD$collectPeriodTo)
+datKD$PublDate = as.Date(datKD$PublDate)
+dfKD = data.frame(KD=elec$KD*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datKD = rbind(datKD, dfKD)
+datKD = datKD[order(datKD$collectPeriodFrom),]
+orig.date = as.Date(datKD$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datKD = datKD[-which(datKD$collectPeriodTo>end.date),]
+
+datKD$collectPeriodFrom.num = julian(datKD$collectPeriodFrom,origin=orig.date) #days since origin
+datKD$collectPeriodTo.num = julian(datKD$collectPeriodTo,origin=orig.date) #days since origin
+datKD$fieldDate.num = floor((datKD$collectPeriodFrom.num + datKD$collectPeriodTo.num) / 2)
+datKD$KD = datKD$KD/100
+datKD = datKD[-nrow(datKD),]
+
+jags_KD ='
+model{
+#observed model
+for(i in 1:npolls){
+KD[i] ~ dnorm(xKD[day[i]],precKD[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xKD[i] ~ dnorm(xKD[i-1],phiKD)
+}
+## priors
+xKD[1] ~ dunif(0,1)
+epsKD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiKD <- 1/epsKD
+}
+'
+
+pKD = (1 / (datKD$KD*(1-datKD$KD)/datKD$n)) #binomial
+#pKD = (1 / (datKD$KD*(1-datKD$KD)*datKD$n)) #multinomial
+e2014data_KD = list(KD = datKD$KD, precKD = pKD, xKD = rep(NA,end.date - orig.date),
+                    day = datKD$fieldDate.num, npolls = nrow(datKD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_KD,con="e2014kalman_KD.bug")
+
+system.time(e2014jags_mod_KD <- jags.model("e2014kalman_KD.bug", data = e2014data_KD, n.chain=3))
+
+system.time(e2014outKD <- coda.samples(e2014jags_mod_KD,variable.names = c("xKD", "KD"), n.iter = ninter, thin = 5))
+e2014sumKD = summary(e2014outKD)
+e2014cred_intKD = HPDinterval(e2014outKD[,which(regexpr("xKD", row.names(e2014sumKD$statistics))==1)], 0.95)
+
+
+########### C #############
+datC = na.omit(polls[,c('C','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datC$house = factor(datC$house)
+datC = datC[order(datC$collectPeriodFrom),]
+datC$collectPeriodFrom = as.Date(datC$collectPeriodFrom)
+datC$collectPeriodTo = as.Date(datC$collectPeriodTo)
+datC$PublDate = as.Date(datC$PublDate)
+dfC = data.frame(C=elec$C*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datC = rbind(datC, dfC)
+datC = datC[order(datC$collectPeriodFrom),]
+orig.date = as.Date(datC$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datC = datC[-which(datC$collectPeriodTo>end.date),]
+
+datC$collectPeriodFrom.num = julian(datC$collectPeriodFrom,origin=orig.date) #days since origin
+datC$collectPeriodTo.num = julian(datC$collectPeriodTo,origin=orig.date) #days since origin
+datC$fieldDate.num = floor((datC$collectPeriodFrom.num + datC$collectPeriodTo.num) / 2)
+datC$C = datC$C/100
+datC = datC[-nrow(datC),]
+
+jags_C ='
+model{
+#observed model
+for(i in 1:npolls){
+C[i] ~ dnorm(xC[day[i]],precC[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xC[i] ~ dnorm(xC[i-1],phiC)
+}
+## priors
+xC[1] ~ dunif(0,1)
+epsC ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiC <- 1/epsC
+}
+'
+
+pC = (1 / (datC$C*(1-datC$C)/datC$n)) #binomial
+#pC = (1 / (datC$C*(1-datC$C)*datC$n)) #multinomial
+e2014data_C = list(C = datC$C, precC = pC, xC = rep(NA,end.date - orig.date),
+                   day = datC$fieldDate.num, npolls = nrow(datC), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_C,con="e2014kalman_C.bug")
+
+system.time(e2014jags_mod_C <- jags.model("e2014kalman_C.bug", data = e2014data_C, n.chain=3))
+
+system.time(e2014outC <- coda.samples(e2014jags_mod_C,variable.names = c("xC", "C"), n.iter = ninter, thin = 5))
+e2014sumC = summary(e2014outC)
+e2014cred_intC = HPDinterval(e2014outC[,which(regexpr("xC", row.names(e2014sumC$statistics))==1)], 0.95)
+
+
+########### S #############
+
+datS = na.omit(polls[,c('S','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datS$house = factor(datS$house)
+datS = datS[order(datS$collectPeriodFrom),]
+datS$collectPeriodFrom = as.Date(datS$collectPeriodFrom)
+datS$collectPeriodTo = as.Date(datS$collectPeriodTo)
+datS$PublDate = as.Date(datS$PublDate)
+dfS = data.frame(S=elec$S*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datS = rbind(datS, dfS)
+datS = datS[order(datS$collectPeriodFrom),]
+orig.date = as.Date(datS$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datS = datS[-which(datS$collectPeriodTo>end.date),]
+
+datS$collectPeriodFrom.num = julian(datS$collectPeriodFrom,origin=orig.date) #days since origin
+datS$collectPeriodTo.num = julian(datS$collectPeriodTo,origin=orig.date) #days since origin
+datS$fieldDate.num = floor((datS$collectPeriodFrom.num + datS$collectPeriodTo.num) / 2)
+datS$S = datS$S/100
+datS = datS[-nrow(datS),]
+
+jags_S ='
+model{
+#observed model
+for(i in 1:npolls){
+S[i] ~ dnorm(xS[day[i]],precS[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xS[i] ~ dnorm(xS[i-1],phiS)
+}
+## priors
+xS[1] ~ dunif(0,1)
+epsS ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiS <- 1/epsS
+}
+'
+
+pS = (1 / (datS$S*(1-datS$S)/datS$n)) #binomial
+#pS = (1 / (datS$S*(1-datS$S)*datS$n)) #multinomial
+e2014data_S = list(S = datS$S, precS = pS, xS = rep(NA,end.date - orig.date),
+                   day = datS$fieldDate.num, npolls = nrow(datS), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_S,con="e2014kalman_S.bug")
+
+system.time(e2014jags_mod_S <- jags.model("e2014kalman_S.bug", data = e2014data_S, n.chain=3))
+
+system.time(e2014outS <- coda.samples(e2014jags_mod_S,variable.names = c("xS", "S"), n.iter = ninter, thin = 5))
+e2014sumS = summary(e2014outS)
+e2014cred_intS = HPDinterval(e2014outS[,which(regexpr("xS", row.names(e2014sumS$statistics))==1)], 0.95)
+
+########### MP #############
+
+datMP = na.omit(polls[,c('MP','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datMP$house = factor(datMP$house)
+datMP = datMP[order(datMP$collectPeriodFrom),]
+datMP$collectPeriodFrom = as.Date(datMP$collectPeriodFrom)
+datMP$collectPeriodTo = as.Date(datMP$collectPeriodTo)
+datMP$PublDate = as.Date(datMP$PublDate)
+dfMP = data.frame(MP=elec$MP*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datMP = rbind(datMP, dfMP)
+datMP = datMP[order(datMP$collectPeriodFrom),]
+orig.date = as.Date(datMP$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datMP = datMP[-which(datMP$collectPeriodTo>end.date),]
+
+datMP$collectPeriodFrom.num = julian(datMP$collectPeriodFrom,origin=orig.date) #days since origin
+datMP$collectPeriodTo.num = julian(datMP$collectPeriodTo,origin=orig.date) #days since origin
+datMP$fieldDate.num = floor((datMP$collectPeriodFrom.num + datMP$collectPeriodTo.num) / 2)
+datMP$MP = datMP$MP/100
+datMP = datMP[-nrow(datMP),]
+
+jags_MP ='
+model{
+#observed model
+for(i in 1:npolls){
+MP[i] ~ dnorm(xMP[day[i]],precMP[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xMP[i] ~ dnorm(xMP[i-1],phiMP)
+}
+## priors
+xMP[1] ~ dunif(0,1)
+epsMP ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiMP <- 1/epsMP
+}
+'
+
+pMP = (1 / (datMP$MP*(1-datMP$MP)/datMP$n)) #binomial
+#pMP = (1 / (datMP$MP*(1-datMP$MP)*datMP$n)) #multinomial
+e2014data_MP = list(MP = datMP$MP, precMP = pMP, xMP = rep(NA,end.date - orig.date),
+                    day = datMP$fieldDate.num, npolls = nrow(datMP), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_MP,con="e2014kalman_MP.bug")
+
+system.time(e2014jags_mod_MP <- jags.model("e2014kalman_MP.bug", data = e2014data_MP, n.chain=3))
+
+system.time(e2014outMP <- coda.samples(e2014jags_mod_MP,variable.names = c("xMP", "MP"), n.iter = ninter, thin = 5))
+e2014sumMP = summary(e2014outMP)
+e2014cred_intMP = HPDinterval(e2014outMP[,which(regexpr("xMP", row.names(e2014sumMP$statistics))==1)], 0.95)
+
+########### V #############
+
+datV = na.omit(polls[,c('V','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datV$house = factor(datV$house)
+datV = datV[order(datV$collectPeriodFrom),]
+datV$collectPeriodFrom = as.Date(datV$collectPeriodFrom)
+datV$collectPeriodTo = as.Date(datV$collectPeriodTo)
+datV$PublDate = as.Date(datV$PublDate)
+dfV = data.frame(V=elec$V*100, collectPeriodFrom=elec$Date, collectPeriodTo=elec$Date, n=n, PublDate=elec$Date, house="Election")
+datV = rbind(datV, dfV)
+datV = datV[order(datV$collectPeriodFrom),]
+orig.date = as.Date(datV$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datV = datV[-which(datV$collectPeriodTo>end.date),]
+
+datV$collectPeriodFrom.num = julian(datV$collectPeriodFrom,origin=orig.date) #days since origin
+datV$collectPeriodTo.num = julian(datV$collectPeriodTo,origin=orig.date) #days since origin
+datV$fieldDate.num = floor((datV$collectPeriodFrom.num + datV$collectPeriodTo.num) / 2)
+datV$V = datV$V/100
+datV = datV[-nrow(datV),]
+
+jags_V ='
+model{
+#observed model
+for(i in 1:npolls){
+V[i] ~ dnorm(xV[day[i]],precV[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xV[i] ~ dnorm(xV[i-1],phiV)
+}
+## priors
+xV[1] ~ dunif(0,1)
+epsV ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiV <- 1/epsV
+}
+'
+
+pV = (1 / (datV$V*(1-datV$V)/datV$n)) #binomial
+#pV = (1 / (datV$V*(1-datV$V)*datV$n)) #multinomial
+e2014data_V = list(V = datV$V, precV = pV, xV = rep(NA,end.date - orig.date),
+                   day = datV$fieldDate.num, npolls = nrow(datV), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_V,con="e2014kalman_V.bug")
+
+system.time(e2014jags_mod_V <- jags.model("e2014kalman_V.bug", data = e2014data_V, n.chain=3))
+
+system.time(e2014outV <- coda.samples(e2014jags_mod_V,variable.names = c("xV", "V"), n.iter = ninter, thin = 5))
+e2014sumV = summary(e2014outV)
+e2014cred_intV = HPDinterval(e2014outV[,which(regexpr("xV", row.names(e2014sumV$statistics))==1)], 0.95)
+
+########### SD #############
+
+datSD = na.omit(polls[,c('SD','collectPeriodFrom','collectPeriodTo','n', 'PublDate', 'house')])
+datSD$house = factor(datSD$house)
+datSD = datSD[order(datSD$collectPeriodFrom),]
+datSD$collectPeriodFrom = as.Date(datSD$collectPeriodFrom)
+datSD$collectPeriodTo = as.Date(datSD$collectPeriodTo)
+datSD$PublDate = as.Date(datSD$PublDate)
+elecSD = data.frame(elec[-1,])
+dfSD = data.frame(SD=elecSD$SD*100, collectPeriodFrom=elecSD$Date, collectPeriodTo=elecSD$Date, n=n[-1], PublDate=elecSD$Date, house="Election")
+datSD = rbind(datSD, dfSD)
+datSD = datSD[order(datSD$collectPeriodFrom),]
+orig.date = as.Date(datSD$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datSD = datSD[-which(datSD$collectPeriodTo>end.date),]
+
+datSD$collectPeriodFrom.num = julian(datSD$collectPeriodFrom,origin=orig.date) #days since origin
+datSD$collectPeriodTo.num = julian(datSD$collectPeriodTo,origin=orig.date) #days since origin
+datSD$fieldDate.num = floor((datSD$collectPeriodFrom.num + datSD$collectPeriodTo.num) / 2)
+datSD$SD = datSD$SD/100
+datSD = datSD[-nrow(datSD),]
+
+jags_SD ='
+model{
+#observed model
+for(i in 1:npolls){
+SD[i] ~ dnorm(xSD[day[i]],precSD[i])
+}
+#dynamic model
+for(i in 2:nperiods){
+xSD[i] ~ dnorm(xSD[i-1],phiSD)
+}
+## priors
+xSD[1] ~ dunif(0,1)
+epsSD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
+phiSD <- 1/epsSD
+}
+'
+pSD = (1 / (datSD$SD*(1-datSD$SD)/datSD$n)) #binomial
+#pSD = (1 / (datSD$SD*(1-datSD$SD)*datSD$n)) #multinomial
+e2014data_SD = list(SD = datSD$SD, precSD = pSD, xSD = rep(NA,end.date - orig.date),
+                    day = datSD$fieldDate.num, npolls = nrow(datSD), nperiods = as.numeric(end.date - orig.date))
+writeLines(jags_SD,con="e2014kalman_SD.bug")
+
+system.time(e2014jags_mod_SD <- jags.model("e2014kalman_SD.bug", data = e2014data_SD, n.chain=3))
+
+system.time(e2014outSD <- coda.samples(e2014jags_mod_SD,variable.names = c("xSD", "SD"), n.iter = ninter, thin = 5))
+e2014sumSD = summary(e2014outSD)
+e2014cred_intSD = HPDinterval(e2014outSD[,which(regexpr("xSD", row.names(e2014sumSD$statistics))==1)], 0.95)
+
+#################################
+
+sumM = e2014sumM;outM = e2014outM;sumL = e2014sumL;outL = e2014outL;
+sumKD = e2014sumKD
+outKD = e2014outKD;sumC = e2014sumC;outC = e2014outC;sumS = e2014sumS;outS = e2014outS
+sumMP = e2014sumMP;outMP = e2014outMP;sumV = e2014sumV;outV = e2014outV;sumSD = e2014sumSD;outSD = e2014outSD
+
+meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1];meanL = sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),1]
+meanKD = sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),1];meanC = sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),1]
+meanS = sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),1];meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),1]
+meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1];meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
+
+meanM[length(meanM)]; e2014cred_intM[[1]][nrow(e2014cred_intM[[1]]),];meanL[length(meanL)]; e2014cred_intL[[1]][nrow(e2014cred_intL[[1]]),]
+meanKD[length(meanKD)]; e2014cred_intKD[[1]][nrow(e2014cred_intKD[[1]]),];meanC[length(meanC)]; e2014cred_intC[[1]][nrow(e2014cred_intC[[1]]),]
+meanS[length(meanS)]; e2014cred_intS[[1]][nrow(e2014cred_intS[[1]]),];meanMP[length(meanMP)]; e2014cred_intMP[[1]][nrow(e2014cred_intMP[[1]]),]
+meanV[length(meanV)]; e2014cred_intV[[1]][nrow(e2014cred_intV[[1]]),];meanSD[length(meanSD)]; e2014cred_intSD[[1]][nrow(e2014cred_intSD[[1]]),]
 
