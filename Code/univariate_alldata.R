@@ -491,13 +491,13 @@ for(i in 1:nrow(varM)){
 
 
 yrepM = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxM[s,datM$fieldDate.num], varM[s,]))
-yrepL = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxL[s,datL$fieldDate.num], varL[s,] ))
-yrepKD = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxKD[s,datKD$fieldDate.num], varKD[s,] ))
-yrepC = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxC[s,datC$fieldDate.num], varC[s,] ))
-yrepS = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxS[s,datS$fieldDate.num], varS[s,] ))
-yrepMP = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxMP[s,datMP$fieldDate.num], varMP[s,] ))
-yrepV = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxV[s,datV$fieldDate.num], varV[s,] ))
-yrepSD = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxSD[s,datSD$fieldDate.num], varSD[s,] ))
+yrepL = sapply(1:nsim, function(s) rnorm(length(datL$fieldDate.num),simxL[s,datL$fieldDate.num], varL[s,] ))
+yrepKD = sapply(1:nsim, function(s) rnorm(length(datKD$fieldDate.num),simxKD[s,datKD$fieldDate.num], varKD[s,] ))
+yrepC = sapply(1:nsim, function(s) rnorm(length(datC$fieldDate.num),simxC[s,datC$fieldDate.num], varC[s,] ))
+yrepS = sapply(1:nsim, function(s) rnorm(length(datS$fieldDate.num),simxS[s,datS$fieldDate.num], varS[s,] ))
+yrepMP = sapply(1:nsim, function(s) rnorm(length(datMP$fieldDate.num),simxMP[s,datMP$fieldDate.num], varMP[s,] ))
+yrepV = sapply(1:nsim, function(s) rnorm(length(datV$fieldDate.num),simxV[s,datV$fieldDate.num], varV[s,] ))
+yrepSD = sapply(1:nsim, function(s) rnorm(length(datSD$fieldDate.num),simxSD[s,datSD$fieldDate.num], varSD[s,] ))
 
 
 ####### y^rep 2 #######
@@ -887,70 +887,38 @@ multiplot(gM, gL, gKD, gC, gS, gMP, gS, gSD, cols=2)
 ################# MSE ######################
 ############################################
 
-lM= list()
-lL= list()
-lC= list()
-lKD= list()
-lS= list()
-lMP= list()
-lV= list()
-lSD= list()
-for (i in 1:3){
-  lM[[i]] = outM[[i]][,which(regexpr("xM", colnames(outM[[i]]))==1)]
-  lM[[i]] = lM[[i]][,datM$fieldDate.num]
-  lL[[i]] = outL[[i]][,which(regexpr("xL", colnames(outL[[i]]))==1)]
-  lL[[i]] = lL[[i]][,datL$fieldDate.num]
-  lKD[[i]] = outKD[[i]][,which(regexpr("xKD", colnames(outKD[[i]]))==1)]
-  lKD[[i]] = lKD[[i]][,datKD$fieldDate.num]
-  lC[[i]] = outC[[i]][,which(regexpr("xC", colnames(outC[[i]]))==1)]
-  lC[[i]] = lC[[i]][,datC$fieldDate.num]
-  lS[[i]] = outS[[i]][,which(regexpr("xS", colnames(outS[[i]]))==1)]
-  lS[[i]] = lS[[i]][,datS$fieldDate.num]
-  lMP[[i]] = outMP[[i]][,which(regexpr("xMP", colnames(outMP[[i]]))==1)]
-  lMP[[i]] = lMP[[i]][,datMP$fieldDate.num]
-  lV[[i]] = outV[[i]][,which(regexpr("xV", colnames(outV[[i]]))==1)]
-  lV[[i]] = lV[[i]][,datV$fieldDate.num]
-  lSD[[i]] = outSD[[i]][,which(regexpr("xSD", colnames(outSD[[i]]))==1)]
-  lSD[[i]] = lSD[[i]][,datSD$fieldDate.num]
-}
 
-mseM = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseL = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseKD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseC = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseS = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseMP = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseV = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-mseSD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-for(i in 1:3){
-  for (j in 1:nrow(lM[[i]])){
-    mseM[j,i] = sum((datM$M-lM[[i]][j,])^2)/nrow(datM)
-    mseL[j,i] = sum((datL$L-lL[[i]][j,])^2)/nrow(datL)
-    mseKD[j,i] = sum((datKD$KD-lKD[[i]][j,])^2)/nrow(datKD)
-    mseC[j,i] = sum((datC$C-lC[[i]][j,])^2)/nrow(datC)
-    mseS[j,i] = sum((datS$S-lS[[i]][j,])^2)/nrow(datS)
-    mseMP[j,i] = sum((datMP$MP-lMP[[i]][j,])^2)/nrow(datMP)
-    mseV[j,i] = sum((datV$V-lV[[i]][j,])^2)/nrow(datV)
-    mseSD[j,i] = sum((datSD$SD-lSD[[i]][j,])^2)/nrow(datSD)
+mseM = mseL = mseKD = mseC = mseS = mseMP = mseV = mseSD = NULL
+
+
+for (j in 1:dim(yrepM)[2]){
+  mseM[j] = sum((datM$M-yrepM[,j])^2)/length(datM$M)
+  mseL[j] = sum((datL$L-yrepL[,j])^2)/length(datL$L)
+  mseKD[j] = sum((datKD$KD-yrepKD[,j])^2)/length(datKD$KD)
+  mseC[j] = sum((datC$C-yrepC[,j])^2)/length(datC$C)
+  mseS[j] = sum((datS$S-yrepS[,j])^2)/length(datS$S)
+  mseMP[j] = sum((datMP$MP-yrepMP[,j])^2)/length(datMP$MP)
+  mseV[j] = sum((datV$V-yrepV[,j])^2)/length(datV$V)
+  mseSD[j] = sum((datSD$SD-yrepSD[,j])^2)/length(datSD$SD)
   }
-}
+
 
 par(mfrow=c(3,3))
-hist(rbind(mseM[,1], mseM[,2], mseM[,3]), main="M", xlab="MSE", col="blue")
+hist(mseM, main="M", xlab="MSE", col="blue")
 abline(v=mean(mseM))
-hist(rbind(mseL[,1], mseL[,2], mseL[,3]), main="L", xlab="MSE", col="lightblue3")
+hist(mseL, main="L", xlab="MSE", col="lightblue3")
 abline(v=mean(mseL))
-hist(rbind(mseKD[,1], mseKD[,2], mseKD[,3]), main="KD", xlab="MSE", col="darkblue")
+hist(mseKD, main="KD", xlab="MSE", col="darkblue")
 abline(v=mean(mseKD))
-hist(rbind(mseC[,1], mseC[,2], mseC[,3]), main="C", xlab="MSE", col="chartreuse3")
+hist(mseC, main="C", xlab="MSE", col="chartreuse3")
 abline(v=mean(mseC))
-hist(rbind(mseS[,1], mseS[,2], mseS[,3]), main="S", xlab="MSE", col="red")
+hist(mseS, main="S", xlab="MSE", col="red")
 abline(v=mean(mseS))
-hist(rbind(mseMP[,1], mseMP[,2], mseMP[,3]), main="MP", xlab="MSE", col="forestgreen")
+hist(mseMP, main="MP", xlab="MSE", col="forestgreen")
 abline(v=mean(mseMP))
-hist(rbind(mseV[,1], mseV[,2], mseV[,3]), main="V", xlab="MSE", col="darkred")
+hist(mseV, main="V", xlab="MSE", col="darkred")
 abline(v=mean(mseV))
-hist(rbind(mseSD[,1], mseSD[,2], mseSD[,3]), main="SD", xlab="MSE", col="skyblue3")
+hist(mseSD, main="SD", xlab="MSE", col="skyblue3")
 abline(v=mean(mseSD))
 par(mfrow=c(1,1))
 
@@ -970,38 +938,35 @@ sum((datV$V-lV[[t]][s,])^2)/nrow(datV);sum((datSD$SD-lSD[[t]][s,])^2)/nrow(datSD
 ############################################################
 
 
-maeM = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeL = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeKD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeC = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeS = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeMP = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-maeV = matrix(NA, nrow=nrow(lM[[1]]), ncol=3);maeSD = matrix(NA, nrow=nrow(lM[[1]]), ncol=3)
-for(i in 1:3){
-  for (j in 1:nrow(lM[[i]])){
-    maeM[j,i] = sum(abs(datM$M-lM[[i]][j,]))/nrow(datM)
-    maeL[j,i] = sum(abs(datL$L-lL[[i]][j,]))/nrow(datL)
-    maeKD[j,i] = sum(abs(datKD$KD-lKD[[i]][j,]))/nrow(datKD)
-    maeC[j,i] = sum(abs(datC$C-lC[[i]][j,]))/nrow(datC)
-    maeS[j,i] = sum(abs(datS$S-lS[[i]][j,]))/nrow(datS)
-    maeMP[j,i] = sum(abs(datMP$MP-lMP[[i]][j,]))/nrow(datMP)
-    maeV[j,i] = sum(abs(datV$V-lV[[i]][j,]))/nrow(datV)
-    maeSD[j,i] = sum(abs(datSD$SD-lSD[[i]][j,]))/nrow(datSD)
-  }
+maeM =maeL =maeKD = maeC = maeS = maeMP = maeV =maeSD = NULL
+for (j in 1:dim(yrepM)[2]){
+  maeM[j] = sum(abs(datM$M-yrepM[,j]))/length(datM$M)
+  maeL[j] = sum(abs(datL$L-yrepL[,j]))/length(datL$L)
+  maeKD[j] = sum(abs(datKD$KD-yrepKD[,j]))/length(datKD$KD)
+  maeC[j] = sum(abs(datC$C-yrepC[,j]))/length(datC$C)
+  maeS[j] = sum(abs(datS$S-yrepS[,j]))/length(datS$S)
+  maeMP[j] = sum(abs(datMP$MP-yrepMP[,j]))/length(datMP$MP)
+  maeV[j] = sum(abs(datV$V-yrepV[,j]))/length(datV$V)
+  maeSD[j] = sum(abs(datSD$SD-yrepSD[,j]))/length(datSD$SD)
 }
 
+
 par(mfrow=c(3,3))
-hist(rbind(maeM[,1], maeM[,2], maeM[,3]), main="M", xlab="MAE", col="blue")
+hist(maeM, main="M", xlab="MAE", col="blue")
 abline(v=mean(maeM))
-hist(rbind(maeL[,1], maeL[,2], maeL[,3]), main="L", xlab="MAE", col="lightblue3")
+hist(maeL, main="L", xlab="MAE", col="lightblue3")
 abline(v=mean(maeL))
-hist(rbind(maeKD[,1], maeKD[,2], maeKD[,3]), main="KD", xlab="MAE", col="darkblue")
+hist(maeKD, main="KD", xlab="MAE", col="darkblue")
 abline(v=mean(maeKD))
-hist(rbind(maeC[,1], maeC[,2], maeC[,3]), main="C", xlab="MAE", col="chartreuse3")
+hist(maeC, main="C", xlab="MAE", col="chartreuse3")
 abline(v=mean(maeC))
-hist(rbind(maeS[,1], maeS[,2], maeS[,3]), main="S", xlab="MAE", col="red")
+hist(maeS, main="S", xlab="MAE", col="red")
 abline(v=mean(maeS))
-hist(rbind(maeMP[,1], maeMP[,2], maeMP[,3]), main="MP", xlab="MAE", col="forestgreen")
+hist(maeMP, main="MP", xlab="MAE", col="forestgreen")
 abline(v=mean(maeMP))
-hist(rbind(maeV[,1], maeV[,2], maeV[,3]), main="V", xlab="MAE", col="darkred")
+hist(maeV, main="V", xlab="MAE", col="darkred")
 abline(v=mean(maeV))
-hist(rbind(maeSD[,1], maeSD[,2], maeSD[,3]), main="SD", xlab="MAE", col="skyblue3")
+hist(maeSD, main="SD", xlab="MAE", col="skyblue3")
 abline(v=mean(maeSD))
 par(mfrow=c(1,1))
 
@@ -1456,6 +1421,9 @@ meanKD[length(meanKD)]; e2010cred_intKD[[1]][nrow(e2010cred_intKD[[1]]),];meanC[
 meanS[length(meanS)]; e2010cred_intS[[1]][nrow(e2010cred_intS[[1]]),];meanMP[length(meanMP)]; e2010cred_intMP[[1]][nrow(e2010cred_intMP[[1]]),]
 meanV[length(meanV)]; e2010cred_intV[[1]][nrow(e2010cred_intV[[1]]),];meanSD[length(meanSD)]; e2010cred_intSD[[1]][nrow(e2010cred_intSD[[1]]),]
 
+meanM[length(meanM)]-elec[4,1];meanL[length(meanL)]-elec[4,2];meanKD[length(meanKD)]-elec[4,3]
+meanC[length(meanC)]-elec[4,4];meanS[length(meanS)]-elec[4,5];meanMP[length(meanMP)]-elec[4,6]
+meanV[length(meanV)]-elec[4,7];meanSD[length(meanSD)]-elec[4,8]
 
 
 ################################################
@@ -1897,3 +1865,6 @@ meanKD[length(meanKD)]; e2014cred_intKD[[1]][nrow(e2014cred_intKD[[1]]),];meanC[
 meanS[length(meanS)]; e2014cred_intS[[1]][nrow(e2014cred_intS[[1]]),];meanMP[length(meanMP)]; e2014cred_intMP[[1]][nrow(e2014cred_intMP[[1]]),]
 meanV[length(meanV)]; e2014cred_intV[[1]][nrow(e2014cred_intV[[1]]),];meanSD[length(meanSD)]; e2014cred_intSD[[1]][nrow(e2014cred_intSD[[1]]),]
 
+meanM[length(meanM)]-elec[4,1];meanL[length(meanL)]-elec[4,2];meanKD[length(meanKD)]-elec[4,3]
+meanC[length(meanC)]-elec[4,4];meanS[length(meanS)]-elec[4,5];meanMP[length(meanMP)]-elec[4,6]
+meanV[length(meanV)]-elec[4,7];meanSD[length(meanSD)]-elec[4,8]
