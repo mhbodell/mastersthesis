@@ -435,7 +435,8 @@ all_cred_intSD = HPDinterval(all_outSD[,which(regexpr("xSD", row.names(all_sumSD
 ######################################################################
 sumM = all_sumM;outM = all_outM;sumL = all_sumL;outL = all_outL;sumKD = all_sumKD;outKD = all_outKD
 sumC = all_sumC;outC = all_outC;sumS = all_sumS;outS = all_outS;sumMP = all_sumMP;outMP = all_outMP
-sumV = all_sumV;outV = all_outV;sumSD = all_sumSD;outSD = all_outSD
+sumV = all_sumV;outV = all_outV;
+sumSD = all_sumSD;outSD = all_outSD
 
 
 meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1]
@@ -712,7 +713,7 @@ dfMP = data.frame(party = meanMP[-c(1:as.numeric(datMP$collectPeriodFrom[2]-datM
 dfV = data.frame(party = meanV[-c(1:as.numeric(datV$collectPeriodFrom[2]-datV$collectPeriodFrom[1]))] , 
                  low=all_cred_intV[[1]][-c(1:as.numeric(datV$collectPeriodFrom[2]-datV$collectPeriodFrom[1])),1]*100, 
                  high=all_cred_intV[[1]][-c(1:as.numeric(datV$collectPeriodFrom[2]-datV$collectPeriodFrom[1])),2]*100,
-                 time=as.Date(datV$collectPeriodFrom[2]-1),by='days',length=length(c(rep(NA,end.date - as.Date(datV$collectPeriodFrom[2]-1)))),
+                 time=seq(as.Date(datV$collectPeriodFrom[2]-1),by='days',length=length(c(rep(NA,end.date - as.Date(datV$collectPeriodFrom[2]-1))))),
                  party2 = rep("V", length(c(rep(NA,end.date - as.Date(datV$collectPeriodFrom[2]-1))))))
 
 dfSD = data.frame(party = meanSD[-c(1:as.numeric(datSD$collectPeriodFrom[2]-datSD$collectPeriodFrom[1]))] , 
@@ -767,7 +768,7 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 }
 
 
-
+library(ggplot2)
 gM <- ggplot(dfM) +
   aes(x = time, y = party*100) +
   geom_line(col="blue", alpha=1)  +
@@ -881,7 +882,7 @@ gSD <- ggplot(dfSD) +
         panel.grid.minor = element_blank())
 
 
-multiplot(gM, gL, gKD, gC, gS, gMP, gS, gSD, cols=2)
+multiplot(gM, gL, gKD, gC, gS, gMP, gV, gSD, cols=2)
 
 ############################################
 ################# MSE ######################

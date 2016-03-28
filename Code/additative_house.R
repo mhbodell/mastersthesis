@@ -437,7 +437,7 @@ data_SD_house = list(SD = datSD$SD, precSD = pSD, xSD = rep(NA,end.date - orig.d
 writeLines(jags_SD_house, con="kalman_SD_house.bug")
 
 system.time(jags_SD_house <- jags.model("kalman_SD_house.bug", data = data_SD_house))
-
+niter=ninter
 system.time(outSD_house <- coda.samples(jags_SD_house,variable.names = c("xSD", "SD", "houseSD"), n.iter = niter, thin = 5))
 sumSD_house = summary(outSD_house)
 cred_intSD_house = HPDinterval(outSD_house[,which(regexpr("xSD", row.names(sumSD_house$statistics))==1)], 0.95)
@@ -722,7 +722,11 @@ for(i in 1:nrow(varM)){
 
 ####### y^rep #####
 
-
+testMin = matrix(NA,ncol=8, nrow=100)
+testMax = matrix(NA,ncol=8, nrow=100)
+testMean = matrix(NA,ncol=8, nrow=100)
+colnames(testMin) = colnames(testMax) = colnames(testMean) = c("M","L","KD","C","S","MP","V","SD") 
+for(i in 1:100){
 yrepM_house = sapply(1:nsim, function(s) rnorm(length(datM$fieldDate.num),simxM_house[s,datM$fieldDate.num]+hoefM[s,], varM[s,]))
 yrepL_house = sapply(1:nsim, function(s) rnorm(length(datL$fieldDate.num),simxL_house[s,datL$fieldDate.num]+hoefL[s,], varL[s,] ))
 yrepKD_house = sapply(1:nsim, function(s) rnorm(length(datKD$fieldDate.num),simxKD_house[s,datKD$fieldDate.num]+hoefKD[s,], varKD[s,] ))
@@ -732,7 +736,49 @@ yrepMP_house = sapply(1:nsim, function(s) rnorm(length(datMP$fieldDate.num),simx
 yrepV_house = sapply(1:nsim, function(s) rnorm(length(datV$fieldDate.num),simxV_house[s,datV$fieldDate.num]+hoefV[s,], varV[s,] ))
 yrepSD_house = sapply(1:nsim, function(s) rnorm(length(datSD$fieldDate.num),simxSD_house[s,datSD$fieldDate.num]+hoefSD[s,], varSD[s,] ))
 
+min_repM_house = apply(yrepM_house,2,min)
+min_repL_house = apply(yrepL_house,2,min)
+min_repKD_house = apply(yrepKD_house,2,min)
+min_repC_house = apply(yrepC_house,2,min)
+min_repS_house = apply(yrepS_house,2,min)
+min_repMP_house = apply(yrepMP_house,2,min)
+min_repV_house = apply(yrepV_house,2,min)
+min_repSD_house = apply(yrepSD_house,2,min)
+testMin[i,] = c(sum(ifelse(min_repM_house>= min(datM$M),1,0))/length(min_repM_house),sum(ifelse(min_repL_house>=min(datL$L),1,0))/length(min_repL_house),sum(ifelse(min_repKD_house>=min(datKD$KD),1,0))/length(min_repKD_house),
+                sum(ifelse(min_repC_house>=min(datC$C),1,0))/length(min_repC_house),sum(ifelse(min_repS_house>=min(datS$S),1,0))/length(min_repS_house),sum(ifelse(min_repMP_house>=min(datMP$MP),1,0))/length(min_repMP_house),
+                sum(ifelse(min_repV_house>=min(datV$V),1,0))/length(min_repV_house),sum(ifelse(min_repSD_house>=min(datSD$SD),1,0))/length(min_repSD_house))
+max_repM_house = apply(yrepM_house,2,max)
+max_repL_house = apply(yrepL_house,2,max)
+max_repKD_house = apply(yrepKD_house,2,max)
+max_repC_house = apply(yrepC_house,2,max)
+max_repS_house = apply(yrepS_house,2,max)
+max_repMP_house = apply(yrepMP_house,2,max)
+max_repV_house = apply(yrepV_house,2,max)
+max_repSD_house = apply(yrepSD_house,2,max)
+testMax[i,] = c(sum(ifelse(max_repM_house>= max(datM$M),1,0))/length(max_repM_house),sum(ifelse(max_repL_house>=max(datL$L),1,0))/length(max_repL_house),sum(ifelse(max_repKD_house>=max(datKD$KD),1,0))/length(max_repKD_house),
+                sum(ifelse(max_repC_house>=max(datC$C),1,0))/length(max_repC_house),sum(ifelse(max_repS_house>=max(datS$S),1,0))/length(max_repS_house),sum(ifelse(max_repMP_house>=max(datMP$MP),1,0))/length(max_repMP_house),
+                sum(ifelse(max_repV_house>=max(datV$V),1,0))/length(max_repV_house),sum(ifelse(max_repSD_house>=max(datSD$SD),1,0))/length(max_repSD_house))
 
+mean_repM_house = apply(yrepM_house,2,mean)
+mean_repL_house = apply(yrepL_house,2,mean)
+mean_repKD_house = apply(yrepKD_house,2,mean)
+mean_repC_house = apply(yrepC_house,2,mean)
+mean_repS_house = apply(yrepS_house,2,mean)
+mean_repMP_house = apply(yrepMP_house,2,mean)
+mean_repV_house = apply(yrepV_house,2,mean)
+mean_repSD_house = apply(yrepSD_house,2,mean)
+testMean[i,] = c(sum(ifelse(mean_repM_house>= mean(datM$M),1,0))/length(mean_repM_house),sum(ifelse(mean_repL_house>=mean(datL$L),1,0))/length(mean_repL_house),sum(ifelse(mean_repKD_house>=mean(datKD$KD),1,0))/length(mean_repKD_house),
+                 sum(ifelse(mean_repC_house>=mean(datC$C),1,0))/length(mean_repC_house),sum(ifelse(mean_repS_house>=mean(datS$S),1,0))/length(mean_repS_house),sum(ifelse(mean_repMP_house>=mean(datMP$MP),1,0))/length(mean_repMP_house),
+                 sum(ifelse(mean_repV_house>=mean(datV$V),1,0))/length(mean_repV_house),sum(ifelse(mean_repSD_house>=mean(datSD$SD),1,0))/length(mean_repSD_house))
+
+}
+
+for(i in 1:8){
+print(paste(colnames(testMin)[i],":"))
+print(paste("Min:",mean(testMin[,i]), sep=" "))
+print(paste("Max:",mean(testMax[,i]), sep=" "))
+print(paste("Mean:",mean(testMean[,i]), sep=" "))
+}
 ####### y^rep min #####
 
 par(mfrow=c(3,3))
@@ -962,7 +1008,7 @@ hist(maeSD_house, main="SD", xlab="MAE", col="skyblue3")
 abline(v=mean(maeSD_house))
 par(mfrow=c(1,1))
 
-mean(maeM_house);mean(maeL_house);mean(maeKD_house);mean(maeC_house);mean(maeS_house);mean(maeMP_house);mean(maeV_house)
+mean(maeM_house);mean(maeL_house);mean(maeKD_house);mean(maeC_house);mean(maeS_house);mean(maeMP_house);mean(maeV_house);mean(maeSD_house)
 
 
 ################################################
@@ -1364,9 +1410,9 @@ meanKD[length(meanKD)]; e2010cred_intKD_house[[1]][nrow(e2010cred_intKD_house[[1
 meanS[length(meanS)]; e2010cred_intS_house[[1]][nrow(e2010cred_intS_house[[1]]),];meanMP[length(meanMP)]; e2010cred_intMP_house[[1]][nrow(e2010cred_intMP_house[[1]]),]
 meanV[length(meanV)]; e2010cred_intV_house[[1]][nrow(e2010cred_intV_house[[1]]),];meanSD[length(meanSD)]; e2010cred_intSD_house[[1]][nrow(e2010cred_intSD_house[[1]]),]
 
-meanM[length(meanM)]-elec[4,1];meanL[length(meanL)]-elec[4,2];meanKD[length(meanKD)]-elec[4,3]
-meanC[length(meanC)]-elec[4,4];meanS[length(meanS)]-elec[4,5];meanMP[length(meanMP)]-elec[4,6]
-meanV[length(meanV)]-elec[4,7];meanSD[length(meanSD)]-elec[4,8]
+meanM[length(meanM)]-elec[3,1];meanL[length(meanL)]-elec[3,2];meanKD[length(meanKD)]-elec[3,3]
+meanC[length(meanC)]-elec[3,4];meanS[length(meanS)]-elec[3,5];meanMP[length(meanMP)]-elec[3,6]
+meanV[length(meanV)]-elec[3,7];meanSD[length(meanSD)]-elec[3,8]
 
 ################################################
 ####### predicting election outcome 2014 #######
@@ -1422,6 +1468,54 @@ e2014sumM_house = summary(e2014outM_house)
 e2014cred_intM_house = HPDinterval(e2014outM_house[,which(regexpr("xM", row.names(e2014sumM_house$statistics))==1)], 0.95)
 
 
+############# L ###################
+orig.date = as.Date(datL$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datL = datL[-which(datL$collectPeriodTo>end.date),]
+
+datL$collectPeriodFrom.num = julian(datL$collectPeriodFrom,origin=orig.date)
+datL$collectPeriodTo.num = julian(datL$collectPeriodTo,origin=orig.date)
+datL$fieldDate.num = floor((datL$collectPeriodFrom.num + datL$collectPeriodTo.num) / 2)
+datL = datL[-nrow(datL),]
+
+e2014jags_L_house ='
+model{
+
+#measurement model
+for(i in 1:npolls){
+L[i] ~ dnorm(xL[day[i]]+houseL[org[i]], precL[i])
+}
+
+#dynamic model
+for(i in 2:nperiods){
+xL[i] ~ dnorm(xL[i-1],phiL)
+}
+
+## priors
+xL[1] ~ dunif(0,1) ##weak prior?
+epsL ~ dgamma(1,1)
+phiL <- 1/epsL
+
+for(i in 1:(nhouses-1)){
+houseL[i] ~ dnorm(0,1)
+}
+houseL[12] <- 0
+}
+'
+
+pL = (1 / (datL$L*(1-datL$L)/datL$n)) #binomial
+#pL = (1 / (datL$L*(1-datL$L)*datL$n)) #multinomial
+e2014data_L_house = list(L = datL$L, precL = pL, xL = rep(NA,end.date - orig.date),
+                         day = datL$fieldDate.num, npolls = nrow(datL), nperiods = as.numeric(end.date - orig.date),  
+                         nhouses = length(levels(as.factor(datL$house))), org=as.numeric(as.factor(datL$house)))
+writeLines(e2014jags_L_house,con="kalman_L_e14_house.bug")
+
+system.time(jags_mod_L_e2014_house<- jags.model("kalman_L_e14_house.bug", data = e2014data_L_house, n.chain=3))
+system.time(e2014outL_house <- coda.samples(jags_mod_L_e2014_house,variable.names = c("xL", "L", "houseL"), n.iter = niter, thin = 5))
+e2014sumL_house = summary(e2014outL_house)
+e2014cred_intL_house = HPDinterval(e2014outL_house[,which(regexpr("xL", row.names(e2014sumL_house$statistics))==1)], 0.95)
+
+
 
 ############# KD ###################
 orig.date = as.Date(datKD$collectPeriodFrom[1]-1)
@@ -1469,6 +1563,269 @@ system.time(jags_mod_KD_e2014_house<- jags.model("kalman_KD_e14_house.bug", data
 system.time(e2014outKD_house <- coda.samples(jags_mod_KD_e2014_house,variable.names = c("xKD", "KD", "houseKD"), n.iter = niter, thin = 5))
 e2014sumKD_house = summary(e2014outKD_house)
 e2014cred_intKD_house = HPDinterval(e2014outKD_house[,which(regexpr("xKD", row.names(e2014sumKD_house$statistics))==1)], 0.95)
+
+
+
+############# C ###################
+orig.date = as.Date(datC$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datC = datC[-which(datC$collectPeriodTo>end.date),]
+
+datC$collectPeriodFrom.num = julian(datC$collectPeriodFrom,origin=orig.date)
+datC$collectPeriodTo.num = julian(datC$collectPeriodTo,origin=orig.date)
+datC$fieldDate.num = floor((datC$collectPeriodFrom.num + datC$collectPeriodTo.num) / 2)
+datC = datC[-nrow(datC),]
+
+e2014jags_C_house ='
+model{
+
+#measurement model
+for(i in 1:npolls){
+C[i] ~ dnorm(xC[day[i]]+houseC[org[i]], precC[i])
+}
+
+#dynamic model
+for(i in 2:nperiods){
+xC[i] ~ dnorm(xC[i-1],phiC)
+}
+
+## priors
+xC[1] ~ dunif(0,1) ##weak prior?
+epsC ~ dgamma(1,1)
+phiC <- 1/epsC
+
+for(i in 1:(nhouses-1)){
+houseC[i] ~ dnorm(0,1)
+}
+houseC[12] <- 0
+}
+'
+
+pC = (1 / (datC$C*(1-datC$C)/datC$n)) #binomial
+#pC = (1 / (datC$C*(1-datC$C)*datC$n)) #multinomial
+e2014data_C_house = list(C = datC$C, precC = pC, xC = rep(NA,end.date - orig.date),
+                         day = datC$fieldDate.num, npolls = nrow(datC), nperiods = as.numeric(end.date - orig.date),  
+                         nhouses = length(levels(as.factor(datC$house))), org=as.numeric(as.factor(datC$house)))
+writeLines(e2014jags_C_house,con="kalman_C_e14_house.bug")
+
+system.time(jags_mod_C_e2014_house<- jags.model("kalman_C_e14_house.bug", data = e2014data_C_house, n.chain=3))
+system.time(e2014outC_house <- coda.samples(jags_mod_C_e2014_house,variable.names = c("xC", "C", "houseC"), n.iter = niter, thin = 5))
+e2014sumC_house = summary(e2014outC_house)
+e2014cred_intC_house = HPDinterval(e2014outC_house[,which(regexpr("xC", row.names(e2014sumC_house$statistics))==1)], 0.95)
+
+
+############# S ###################
+orig.date = as.Date(datS$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datS = datS[-which(datS$collectPeriodTo>end.date),]
+
+datS$collectPeriodFrom.num = julian(datS$collectPeriodFrom,origin=orig.date)
+datS$collectPeriodTo.num = julian(datS$collectPeriodTo,origin=orig.date)
+datS$fieldDate.num = floor((datS$collectPeriodFrom.num + datS$collectPeriodTo.num) / 2)
+datS = datS[-nrow(datS),]
+
+e2014jags_S_house ='
+model{
+
+#measurement model
+for(i in 1:npolls){
+S[i] ~ dnorm(xS[day[i]]+houseS[org[i]], precS[i])
+}
+
+#dynamic model
+for(i in 2:nperiods){
+xS[i] ~ dnorm(xS[i-1],phiS)
+}
+
+## priors
+xS[1] ~ dunif(0,1) ##weak prior?
+epsS ~ dgamma(1,1)
+phiS <- 1/epsS
+
+for(i in 1:(nhouses-1)){
+houseS[i] ~ dnorm(0,1)
+}
+houseS[12] <- 0
+}
+'
+
+pS = (1 / (datS$S*(1-datS$S)/datS$n)) #binomial
+#pS = (1 / (datS$S*(1-datS$S)*datS$n)) #multinomial
+e2014data_S_house = list(S = datS$S, precS = pS, xS = rep(NA,end.date - orig.date),
+                          day = datS$fieldDate.num, npolls = nrow(datS), nperiods = as.numeric(end.date - orig.date),  
+                          nhouses = length(levels(as.factor(datS$house))), org=as.numeric(as.factor(datS$house)))
+writeLines(e2014jags_S_house,con="kalman_S_e14_house.bug")
+
+system.time(jags_mod_S_e2014_house<- jags.model("kalman_S_e14_house.bug", data = e2014data_S_house, n.chain=3))
+system.time(e2014outS_house <- coda.samples(jags_mod_S_e2014_house,variable.names = c("xS", "S", "houseS"), n.iter = niter, thin = 5))
+e2014sumS_house = summary(e2014outS_house)
+e2014cred_intS_house = HPDinterval(e2014outS_house[,which(regexpr("xS", row.names(e2014sumS_house$statistics))==1)], 0.95)
+
+
+############# MP ###################
+orig.date = as.Date(datMP$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datMP = datMP[-which(datMP$collectPeriodTo>end.date),]
+
+datMP$collectPeriodFrom.num = julian(datMP$collectPeriodFrom,origin=orig.date)
+datMP$collectPeriodTo.num = julian(datMP$collectPeriodTo,origin=orig.date)
+datMP$fieldDate.num = floor((datMP$collectPeriodFrom.num + datMP$collectPeriodTo.num) / 2)
+datMP = datMP[-nrow(datMP),]
+
+e2014jags_MP_house ='
+model{
+
+#measurement model
+for(i in 1:npolls){
+MP[i] ~ dnorm(xMP[day[i]]+houseMP[org[i]], precMP[i])
+}
+
+#dynamic model
+for(i in 2:nperiods){
+xMP[i] ~ dnorm(xMP[i-1],phiMP)
+}
+
+## priors
+xMP[1] ~ dunif(0,1) ##weak prior?
+epsMP ~ dgamma(1,1)
+phiMP <- 1/epsMP
+
+for(i in 1:(nhouses-1)){
+houseMP[i] ~ dnorm(0,1)
+}
+houseMP[12] <- 0
+}
+'
+
+pMP = (1 / (datMP$MP*(1-datMP$MP)/datMP$n)) #binomial
+#pMP = (1 / (datMP$MP*(1-datMP$MP)*datMP$n)) #multinomial
+e2014data_MP_house = list(MP = datMP$MP, precMP = pMP, xMP = rep(NA,end.date - orig.date),
+                          day = datMP$fieldDate.num, npolls = nrow(datMP), nperiods = as.numeric(end.date - orig.date),  
+                          nhouses = length(levels(as.factor(datMP$house))), org=as.numeric(as.factor(datMP$house)))
+writeLines(e2014jags_MP_house,con="kalman_MP_e14_house.bug")
+
+system.time(jags_mod_MP_e2014_house<- jags.model("kalman_MP_e14_house.bug", data = e2014data_MP_house, n.chain=3))
+system.time(e2014outMP_house <- coda.samples(jags_mod_MP_e2014_house,variable.names = c("xMP", "MP", "houseMP"), n.iter = niter, thin = 5))
+e2014sumMP_house = summary(e2014outMP_house)
+e2014cred_intMP_house = HPDinterval(e2014outMP_house[,which(regexpr("xMP", row.names(e2014sumMP_house$statistics))==1)], 0.95)
+
+
+############# V ###################
+orig.date = as.Date(datV$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datV = datV[-which(datV$collectPeriodTo>end.date),]
+
+datV$collectPeriodFrom.num = julian(datV$collectPeriodFrom,origin=orig.date)
+datV$collectPeriodTo.num = julian(datV$collectPeriodTo,origin=orig.date)
+datV$fieldDate.num = floor((datV$collectPeriodFrom.num + datV$collectPeriodTo.num) / 2)
+datV = datV[-nrow(datV),]
+
+e2014jags_V_house ='
+model{
+
+#measurement model
+for(i in 1:npolls){
+V[i] ~ dnorm(xV[day[i]]+houseV[org[i]], precV[i])
+}
+
+#dynamic model
+for(i in 2:nperiods){
+xV[i] ~ dnorm(xV[i-1],phiV)
+}
+
+## priors
+xV[1] ~ dunif(0,1) ##weak prior?
+epsV ~ dgamma(1,1)
+phiV <- 1/epsV
+
+for(i in 1:(nhouses-1)){
+houseV[i] ~ dnorm(0,1)
+}
+houseV[12] <- 0
+}
+'
+
+pV = (1 / (datV$V*(1-datV$V)/datV$n)) #binomial
+#pV = (1 / (datV$V*(1-datV$V)*datV$n)) #multinomial
+e2014data_V_house = list(V = datV$V, precV = pV, xV = rep(NA,end.date - orig.date),
+                          day = datV$fieldDate.num, npolls = nrow(datV), nperiods = as.numeric(end.date - orig.date),  
+                          nhouses = length(levels(as.factor(datV$house))), org=as.numeric(as.factor(datV$house)))
+writeLines(e2014jags_V_house,con="kalman_V_e14_house.bug")
+
+system.time(jags_mod_V_e2014_house<- jags.model("kalman_V_e14_house.bug", data = e2014data_V_house, n.chain=3))
+system.time(e2014outV_house <- coda.samples(jags_mod_V_e2014_house,variable.names = c("xV", "V", "houseV"), n.iter = niter, thin = 5))
+e2014sumV_house = summary(e2014outV_house)
+e2014cred_intV_house = HPDinterval(e2014outV_house[,which(regexpr("xV", row.names(e2014sumV_house$statistics))==1)], 0.95)
+
+
+
+############# SD ###################
+orig.date = as.Date(datSD$collectPeriodFrom[1]-1)
+end.date = as.Date(elec$Date[4])
+datSD = datSD[-which(datSD$collectPeriodTo>end.date),]
+
+datSD$collectPeriodFrom.num = julian(datSD$collectPeriodFrom,origin=orig.date)
+datSD$collectPeriodTo.num = julian(datSD$collectPeriodTo,origin=orig.date)
+datSD$fieldDate.num = floor((datSD$collectPeriodFrom.num + datSD$collectPeriodTo.num) / 2)
+datSD = datSD[-nrow(datSD),]
+
+e2014jags_SD_house ='
+model{
+
+#measurement model
+for(i in 1:npolls){
+SD[i] ~ dnorm(xSD[day[i]]+houseSD[org[i]], precSD[i])
+}
+
+#dynamic model
+for(i in 2:nperiods){
+xSD[i] ~ dnorm(xSD[i-1],phiSD)
+}
+
+## priors
+xSD[1] ~ dunif(0,1) ##weak prior?
+epsSD ~ dgamma(1,1)
+phiSD <- 1/epsSD
+
+for(i in 1:(nhouses-1)){
+houseSD[i] ~ dnorm(0,1)
+}
+houseSD[12] <- 0
+}
+'
+
+pSD = (1 / (datSD$SD*(1-datSD$SD)/datSD$n)) #binomial
+#pSD = (1 / (datSD$SD*(1-datSD$SD)*datSD$n)) #multinomial
+e2014data_SD_house = list(SD = datSD$SD, precSD = pSD, xSD = rep(NA,end.date - orig.date),
+                          day = datSD$fieldDate.num, npolls = nrow(datSD), nperiods = as.numeric(end.date - orig.date),  
+                          nhouses = length(levels(as.factor(datSD$house))), org=as.numeric(as.factor(datSD$house)))
+writeLines(e2014jags_SD_house,con="kalman_SD_e14_house.bug")
+
+system.time(jags_mod_SD_e2014_house<- jags.model("kalman_SD_e14_house.bug", data = e2014data_SD_house, n.chain=3))
+system.time(e2014outSD_house <- coda.samples(jags_mod_SD_e2014_house,variable.names = c("xSD", "SD", "houseSD"), n.iter = niter, thin = 5))
+e2014sumSD_house = summary(e2014outSD_house)
+e2014cred_intSD_house = HPDinterval(e2014outSD_house[,which(regexpr("xSD", row.names(e2014sumSD_house$statistics))==1)], 0.95)
+
+#################################
+
+sumM = e2014sumM_house;outM = e2014outM_house;sumL = e2014sumL_house;outL = e2014outL_house;sumKD = e2014sumKD_house
+outKD = e2014outKD_house;sumC = e2014sumC_house;outC = e2014outC_house;sumS = e2014sumS_house;outS = e2014outS_house
+sumMP = e2014sumMP_house;outMP = e2014outMP_house;sumV = e2014sumV_house;outV = e2014outV_house;sumSD = e2014sumSD_house;outSD = e2014outSD_house
+
+meanM = sumM$statistics[which(regexpr("xM", row.names(sumM$statistics))==1),1];meanL = sumL$statistics[which(regexpr("xL", row.names(sumL$statistics))==1),1]
+meanKD = sumKD$statistics[which(regexpr("xKD", row.names(sumKD$statistics))==1),1];meanC = sumC$statistics[which(regexpr("xC", row.names(sumC$statistics))==1),1]
+meanS = sumS$statistics[which(regexpr("xS", row.names(sumS$statistics))==1),1];meanMP = sumMP$statistics[which(regexpr("xMP", row.names(sumMP$statistics))==1),1]
+meanV = sumV$statistics[which(regexpr("xV", row.names(sumV$statistics))==1),1];meanSD = sumSD$statistics[which(regexpr("xSD", row.names(sumSD$statistics))==1),1]
+
+meanM[length(meanM)]; e2014cred_intM_house[[1]][nrow(e2014cred_intM_house[[1]]),];meanL[length(meanL)]; e2014cred_intL_house[[1]][nrow(e2014cred_intL_house[[1]]),]
+meanKD[length(meanKD)]; e2014cred_intKD_house[[1]][nrow(e2014cred_intKD_house[[1]]),];meanC[length(meanC)]; e2014cred_intC_house[[1]][nrow(e2014cred_intC_house[[1]]),]
+meanS[length(meanS)]; e2014cred_intS_house[[1]][nrow(e2014cred_intS_house[[1]]),];meanMP[length(meanMP)]; e2014cred_intMP_house[[1]][nrow(e2014cred_intMP_house[[1]]),]
+meanV[length(meanV)]; e2014cred_intV_house[[1]][nrow(e2014cred_intV_house[[1]]),];meanSD[length(meanSD)]; e2014cred_intSD_house[[1]][nrow(e2014cred_intSD_house[[1]]),]
+
+meanM[length(meanM)]-elec[4,1];meanL[length(meanL)]-elec[4,2];meanKD[length(meanKD)]-elec[4,3]
+meanC[length(meanC)]-elec[4,4];meanS[length(meanS)]-elec[4,5];meanMP[length(meanMP)]-elec[4,6]
+meanV[length(meanV)]-elec[4,7];meanSD[length(meanSD)]-elec[4,8]
+
 
 
 
