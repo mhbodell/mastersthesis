@@ -84,7 +84,7 @@ for(i in 2:nperiods){
 xL[i] ~ dnorm(xL[i-1],phiL)
 }
 ## priors
-xM[1] ~ dunif(0,1)
+xL[1] ~ dunif(0,1)
 epsL ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
 phiL <- 1/epsL
 }
@@ -139,7 +139,7 @@ xKD[i] ~ dnorm(xKD[i-1],phiKD)
 }
 ## priors
 
-xKD[1] <-dunif(0,1)
+xKD[1] ~ dunif(0,1)
 epsKD ~ dgamma(1, 1) 
 phiKD <- 1/epsKD
 }
@@ -246,7 +246,7 @@ xS[i] ~ dnorm(xS[i-1],phiS)
 }
 ## priors
 
-xS[1] <- dunif(0,1)
+xS[1] ~ dunif(0,1)
 epsS ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
 phiS <- 1/epsS
 }
@@ -354,7 +354,7 @@ xV[i] ~ dnorm(xV[i-1],phiV)
 }
 ## priors
 
-xV ~ dunif(0,1)
+xV[1] ~ dunif(0,1)
 epsV ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
 phiV <- 1/epsV
 }
@@ -380,6 +380,8 @@ nDaySD = datSD$n/as.numeric(dateDiffSD2)
 SDSmooth = rep(datSD$SD,dateDiffSD2)
 SDnSmooth = rep(nDaySD,dateDiffSD2)
 houseSmoothSD = rep(datSD$house, dateDiffSD2)
+orig.date = as.Date(datSD$collectPeriodFrom[1]-1)
+end.date = datSD$collectPeriodTo[length(datSD$collectPeriodTo)]
 
 eeSD = list()
 for(i in 1:nrow(datSD)){
@@ -393,8 +395,7 @@ for(i in 2:nrow(datSD)){
 
 dateSmooth.numSD = julian(dateSmoothSD,origin=orig.date)
 datSD2 = data.frame(SD = SDSmooth, fieldDate=dateSmoothSD, fieldDate.num = dateSmooth.numSD, n = SDnSmooth, house = houseSmoothSD)
-orig.date = as.Date(datSD$collectPeriodFrom[1]-1)
-end.date = datSD$collectPeriodTo[length(datSD$collectPeriodTo)]
+
 
 jags_SD2 ='
 model{
@@ -404,8 +405,7 @@ SD[i] ~ dnorm(xSD[day[i]],precSD[i])}
 
 #dynamic model 
 for(i in 2:nperiods){
-xSD[i] ~ dnorm(xSD[i-1],phiSD)
-}
+xSD[i] ~ dnorm(xSD[i-1],phiSD)}
 ## priors
 
 xSD[1] ~ dunif(0,1)
@@ -416,7 +416,7 @@ phiSD <- 1/epsSD
 
 pSD2 = (1 / (datSD2$SD*(1-datSD2$SD)/datSD2$n)) #binomial
 #pM = (1 / (datM$M*(1-datM$M)*datM$n)) #multinomial
-data_SD2 = list(SD = datSD2$SD, precSD = pSD2, xSD = rep(NA,end.date - orig.date),
+data_SD2 = list(SD = datSD2$SD, precSD = pSD2, xSD = rep(NA,end.date-orig.date),
                 day = datSD2$fieldDate.num, npolls = nrow(datSD2), nperiods = as.numeric(end.date - orig.date))
 writeLines(jags_SD2,con="kalman_SD2.bug")
 
@@ -1202,7 +1202,7 @@ phiSD <- 1/epsSD
 '
 pSD = (1 / (e10_datSD2$SD*(1-e10_datSD2$SD)/e10_datSD2$n)) #binomial
 #pSD = (1 / (datSD$SD*(1-datSD$SD)*datSD$n)) #multinomial
-e2010data_SD = list(SD = e10_datSD2$SD, precSD = pSD, xSD = rep(NA,e10_datSD2$fieldDate.num[length(e10_datSD2$fieldDate.num)]),
+e2010data_SD = list(SD = e10_datSD2$SD, precSD = pSD, xSD = rep(NA,end.date-orig.date),
                     day = e10_datSD2$fieldDate.num, npolls = nrow(e10_datSD2), nperiods = as.numeric(end.date - orig.date))
 
 writeLines(jags_SD,con="e2010kalman_SD.bug")
@@ -1497,12 +1497,11 @@ jags_SD ='
 model{
 #observed model
 for(i in 1:npolls){
-SD[i] ~ dnorm(xSD[day[i]],precSD[i])
-}
+SD[i] ~ dnorm(xSD[day[i]],precSD[i])}
+
 #dynamic model
 for(i in 2:nperiods){
-xSD[i] ~ dnorm(xSD[i-1],phiSD)
-}
+xSD[i] ~ dnorm(xSD[i-1],phiSD)}
 ## priors
 xSD[1] ~ dunif(0,1)
 epsSD ~ dgamma(1, 1) ## hyperparameters in gamma affects the smoothness of the curve
@@ -1511,8 +1510,8 @@ phiSD <- 1/epsSD
 '
 pSD = (1 / (e14_datSD2$SD*(1-e14_datSD2$SD)/e14_datSD2$n)) #binomial
 #pSD = (1 / (datSD$SD*(1-datSD$SD)*datSD$n)) #multinomial
-e2014data_SD = list(SD = e14_datSD2$SD, precSD = pSD, xSD = rep(NA,e14_datSD2$fieldDate.num[length(e14_datSD2$fieldDate.num)]),
-                    day = e14_datSD2$fieldDate.num, npolls = nrow(e14_datSD2), nperiods = length(rep(NA,e14_datSD2$fieldDate.num[length(e14_datSD2$fieldDate.num)])))
+e2014data_SD = list(SD = e14_datSD2$SD, precSD = pSD, xSD = rep(NA,end.date-orig.date),
+                    day = e14_datSD2$fieldDate.num, npolls = nrow(e14_datSD2), nperiods = length(rep(NA,end.date-orig.date)))
 
 writeLines(jags_SD,con="e2014kalman_SD.bug")
 system.time(e2014jags_mod_SD <- jags.model("e2014kalman_SD.bug", data = e2014data_SD, n.chain=3))

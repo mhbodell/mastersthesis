@@ -44,6 +44,7 @@ head(df)
 
 
 prec=matrix(NA,ncol=8, nrow=nrow(df))
+colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
   for(j in 1:nrow(df)){
     prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
@@ -84,17 +85,19 @@ all_data = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeri
                 phi = NULL, day=df$Date )
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
-
-ninter=20000
-
+update(jags_all,1000)
+ninter=10000
 system.time(all_out <- coda.samples(jags_all,variable.names = c("x", "phi"), n.iter = ninter, thin = 5, burnin=2000))
 sum_all = summary(all_out)
 out_x = all_out[,which(regexpr("x", row.names(sum_all$statistics))==1)]
 sum_x = sum_all$statistics[which(regexpr("x", row.names(sum_all$statistics))==1),]
 out_phi = all_out[,which(regexpr("phi", row.names(sum_all$statistics))==1)]
+
 par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi[[1]])){plot(out_phi[,i])}
+for(i in 1: ncol(out_phi[[1]])){plot(out_phi[,i], main=i)}
 par(mfrow=c(1,1))  
+
+###    M        L        C       KD        S         V       MP        SD##
 
 mean_basic = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
 ind.start = 1
@@ -115,6 +118,7 @@ for(i in 1:ncol(y)){
 ############# POSTERIOR PREDICTIVE CHECKING ######################
 ##################################################################
 
+
 set.seed(901207)
 i = sample(1:3,1)
 rChain = list()
@@ -122,12 +126,14 @@ rChain[[1]] = states_basic[[1]][i];rChain[[2]] = states_basic[[2]][i];rChain[[3]
 rChain[[4]] = states_basic[[4]][i];rChain[[5]] = states_basic[[5]][i];rChain[[6]] = states_basic[[6]][i]
 rChain[[7]] = states_basic[[7]][i];rChain[[8]] = states_basic[[8]][i]
 str(rChain)
-
+nsim = dim(all_out[[i]])[1]
 
 testMin.basic = matrix(NA,ncol=8, nrow=100)
 testMax.basic = matrix(NA,ncol=8, nrow=100)
 testMean.basic = matrix(NA,ncol=8, nrow=100)
 colnames(testMin.basic) = colnames(testMax.basic) = colnames(testMean.basic) = c("M","L","KD","C","S","MP","V","SD") 
+neg.numb =  matrix(NA,ncol=8, nrow=100)
+above1 =  matrix(NA,ncol=8, nrow=100)
 
 for(i in 1:100){
   for(j in 1:ncol(y)){
@@ -138,6 +144,8 @@ for(i in 1:100){
   testMax.basic[i,j] = sum(ifelse(max_rep>= max(df[,j]),1,0))/length(max_rep)
   mean_rep = apply(yrep_basic,2,mean)
   testMean.basic[i,j] = sum(ifelse(mean_rep>= mean(df[,j]),1,0))/length(mean_rep)
+  neg.numb[i,j] = sum(ifelse(yrep_basic<0,1,0))/length(mean_rep)
+  above1[i,j] = sum(ifelse(yrep_basic>0,1,0))/length(mean_rep)
   }
 }
 for(i in 1:ncol(y)){
@@ -145,15 +153,39 @@ for(i in 1:ncol(y)){
   print(paste("Min:",mean(testMin.basic[,i]), sep=" "))
   print(paste("Max:",mean(testMax.basic[,i]), sep=" "))
   print(paste("Mean:",mean(testMean.basic[,i]), sep=" "))
+  print(paste("Negative values:",mean(neg.numb[,i]), sep=" "))
+  print(paste("Negative values:",mean(above1[,i]), sep=" "))
 }
 
-data_cb = 
+dat_cb = list()
+for(i in 1:ncol(y)){
+dat_cb[[i]] = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[i]][s,df$Date]), 1/prec[,i]))
+}
+
+
+dat_low = matrix(NA, ncol=ncol(y), nrow=nrow(y))
+dat_high = matrix(NA, ncol=ncol(y), nrow=nrow(y))
+for(i in 1:ncol(y)){
+  dat_low[,i] = apply(dat_cb[[i]], 1, mean) - (apply(dat_cb[[i]], 1, sd)*1.96)
+  dat_high[,i] = apply(dat_cb[[i]], 1, mean) + (apply(dat_cb[[i]], 1, sd)*1.96)
+}
+
+test =list()
+for(j in 1:ncol(y)){
+  test[[j]] = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[j]][s,df$Date]), 1/prec[,j]))
+}  
+
+for(j in 1:ncol(y)){
+  test[[j]][1,]
+}
+
+
 
 #################################################
 ################# PLOTS #########################
 #################################################
 
-
+### M        L        C       KD        S         V       MP        SD ##
 basic_plot = list()
 
 y = as.matrix(df[,1:8])
@@ -165,11 +197,13 @@ for(i in 1:ncol(mean_basic)){
 plot_df = data.frame(party = mean_basic[,i] ,  low=low_basic[,i]*100, high=high_basic[,i]*100, time=seq(orig.date,by='days',
                  length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y)[i], as.numeric(end.date-orig.date)))
 points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df$Date], 
-                               y=df[,i]*100, house=df$house, party=rep(colnames(y)[i],length(df$Date[length(df$Date)][df$Date])))
+                          y=df[,i]*100, house=df$house, party=rep(colnames(y)[i],length(df$Date[length(df$Date)][df$Date])),
+                          high_dat=dat_high[,i]*100, low_dat=dat_low[,i]*100 )
 basic_plot[[i]] <- ggplot(plot_df) +
   aes(x = time, y = party*100) +
-  geom_line(col=cols[i], alpha=1)  +
+  geom_line(col=cols[i], alpha=2)  +
   geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill=cols[i]) + 
+  geom_ribbon(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
   geom_point(data=points, aes(x=x, y=y), alpha = 1, color=cols[i], shape=16, size=1) +    
   labs(x="Date", y=paste("Support for", sep=" ", unique(plot_df$party2), paste("(%)", sep=" "), collapse="")) +
   theme_bw() +
@@ -179,6 +213,7 @@ basic_plot[[i]] <- ggplot(plot_df) +
         legend.background = element_rect(fill = "white"),
         panel.grid.major = element_line(colour = "lightgrey"),
         panel.grid.minor = element_blank())
+
 
 }
 
@@ -247,7 +282,7 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[2]-1
+orig.date = df$startDate
 end.date = elec$Date[2]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
@@ -263,45 +298,16 @@ for(i in 1:8){
   }
 }
 
-
-jags_dlm ='
-model{
-
-#observed model
-for(j in 1:nparties){
-for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j],prec[i,j])
-}
-}
-
-#dynamic model
-for(j in 1:nparties){
-for(i in 2:nperiods){
-x[i,j] ~ dnorm(x[i-1,j],phi[j])
-}
-}
-
-## priors
-for(i in 1:nparties){
-init.m[i] ~ dunif(0,1)
-init.v[i] ~ dgamma(0.01,0.01)
-x[1,i] ~ dnorm(init.m[i],init.v[i])
-eps[i] ~ dgamma(1,1)
-phi[i] <- 1/eps[i]
-}
-
-}
-'
 y = as.matrix(df[,1:8])
 all_data = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
                 nparties=ncol(y), npolls=nrow(y), nperiods=as.numeric(end.date-orig.date), 
                 phi = NULL, day=df$Date )
 writeLines(jags_dlm,con="jags_dlm.bug")
-system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
+system.time(jags_all2010<- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
 
 ninter=10000
 
-system.time(all_out2010 <- coda.samples(jags_all,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
+system.time(all_out2010 <- coda.samples(jags_all2010,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
 sum_all2010 = summary(all_out2010)
 out_x2010 = all_out2010[,which(regexpr("x", row.names(sum_all2010$statistics))==1)]
 sum_x2010 = sum_all2010$statistics[which(regexpr("x", row.names(sum_all2010$statistics))==1),]
@@ -325,18 +331,110 @@ for(i in 1:ncol(y)){
   states_basic2010[[i]] = out_x2010[,ind.start[i]:ind.end[i]]
 }
 
-matrix(NA, ncol=4, nrow=8)
+pred2010 = matrix(NA, ncol=5, nrow=8)
+row.names(pred2010) = c("M","L","KD","C","S","MP","V","SD")
+colnames(pred2010) = c("Elec_res","MAP","Low","High","Diff")
+for(i in 1:ncol(y)){
+  pred2010[i,] =  cbind(elec[2,i],mean_basic2010[nrow(mean_basic2010),i],low_basic2010[nrow(low_basic2010),i],high_basic2010[nrow(high_basic2010),i],(mean_basic2010[nrow(mean_basic2010),i]-elec[2,i]))
+}
+
+pred2010
 
 
-mean_basic2010[nrow(mean_basic),1];
+####################################################
+############ PREDICT 2010 ELECTION #################
+####################################################
+
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
 
 
-e2010cred_intM[[1]][nrow(e2010cred_intM[[1]]),];meanL[length(meanL)]; e2010cred_intL[[1]][nrow(e2010cred_intL[[1]]),]
-meanKD[length(meanKD)]; e2010cred_intKD[[1]][nrow(e2010cred_intKD[[1]]),];meanC[length(meanC)]; e2010cred_intC[[1]][nrow(e2010cred_intC[[1]]),]
-meanS[length(meanS)]; e2010cred_intS[[1]][nrow(e2010cred_intS[[1]]),];meanMP[length(meanMP)]; e2010cred_intMP[[1]][nrow(e2010cred_intMP[[1]]),]
-meanV[length(meanV)]; e2010cred_intV[[1]][nrow(e2010cred_intV[[1]]),];meanSD[length(meanSD)]; e2010cred_intSD[[1]][nrow(e2010cred_intSD[[1]]),]
+O = NULL
+for(i in 1:nrow(polls)){
+  O[i] = ifelse(sum(polls[i,3:10], na.rm=TRUE)==100,0, sum(polls[i,11:12], na.rm=TRUE))
+}
 
-meanM[length(meanM)]-elec[4,1];meanL[length(meanL)]-elec[4,2];meanKD[length(meanKD)]-elec[4,3]
-meanC[length(meanC)]-elec[4,4];meanS[length(meanS)]-elec[4,5];meanMP[length(meanMP)]-elec[4,6]
-meanV[length(meanV)]-elec[4,7];meanSD[length(meanSD)]-elec[4,8]
+y =  polls[3:10]
+y$O = O
+y$startDate = as.Date(polls$collectPeriodFrom)
+y$endDate = as.Date(polls$collectPeriodTo)
+y$house = polls$house
+no_n = which(is.na(polls[,'n']))
+y = y[-no_n,]
+y$n = polls$n[-no_n]
+
+y[,1:9] = y[,1:9]/100
+df = na.omit(y[,-9])
+
+elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0.00000001),
+                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057))) #c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286))
+
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+row.names(elec) = c("2006","2010","2014") #"2002",
+elec$Date = c( as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #as.Date("2002-09-12"),
+n=c((0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000)) #(0.801*6722*1000),
+## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+colnames(df)[2] <- "L"
+df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
+                 MP=elec$MP,SD=elec$SD, startDate=elec$Date, endDate=elec$Date,
+                 house="Election" ,n=n)
+df = rbind(df, df2)
+df = df[order(df$startDate),]
+orig.date = df$startDate[1]
+end.date = elec$Date[3]
+dayssinceorigStart = julian(df$startDate, origin=orig.date) 
+dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
+df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
+df = df[-which(df$endDate>=end.date),]
+tail(df)
+
+
+prec=matrix(NA,ncol=8, nrow=nrow(df))
+for(i in 1:8){
+  for(j in 1:nrow(df)){
+    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
+  }
+}
+
+y = as.matrix(df[,1:8])
+all_data2014 = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
+                nparties=ncol(y), npolls=nrow(y), nperiods=as.numeric(end.date-orig.date), 
+                phi = NULL, day=df$Date )
+writeLines(jags_dlm,con="jags_dlm.bug")
+system.time(jags_all2014<- jags.model("jags_dlm.bug", data = all_data2014, n.chain=3))
+
+ninter=10000
+
+system.time(all_out2014 <- coda.samples(jags_all2014,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
+sum_all2014 = summary(all_out2014)
+out_x2014 = all_out2014[,which(regexpr("x", row.names(sum_all2014$statistics))==1)]
+sum_x2014 = sum_all2014$statistics[which(regexpr("x", row.names(sum_all2014$statistics))==1),]
+out_phi2014 = all_out2014[,which(regexpr("phi", row.names(sum_all2014$statistics))==1)]
+par(mfrow=c(3,3))
+for(i in 1: ncol(out_phi2014[[1]])){plot(out_phi2014[,i])}
+par(mfrow=c(1,1))  
+
+mean_basic2014 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
+ind.start = 1
+ind.end = as.numeric(end.date-orig.date)
+high_basic2014 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
+low_basic2014 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
+states_basic2014 = list()
+for(i in 1:ncol(y)){
+  ind.start[i+1] = i*as.numeric(end.date-orig.date)+1
+  ind.end[i+1] =  ind.start[i+1]+as.numeric(end.date-orig.date)-1
+  mean_basic2014[,i] = sum_x2014[ind.start[i]:ind.end[i],1]
+  low_basic2014[,i] = mean_basic2014[,i] - 1.96 * sum_x2014[ind.start[i]:ind.end[i],2]
+  high_basic2014[,i] = mean_basic2014[,i] + 1.96 * sum_x2014[ind.start[i]:ind.end[i],2]
+  states_basic2014[[i]] = out_x2014[,ind.start[i]:ind.end[i]]
+}
+
+pred2014 = matrix(NA, ncol=5, nrow=8)
+row.names(pred2014) = c("M","L","KD","C","S","MP","V","SD")
+colnames(pred2014) = c("Elec_res","MAP","Low","High","Diff")
+for(i in 1:ncol(y)){
+  pred2014[i,] =  cbind(elec[2,i],mean_basic2014[nrow(mean_basic2014),i],low_basic2014[nrow(low_basic2014),i],high_basic2014[nrow(high_basic2014),i],(mean_basic2014[nrow(mean_basic2014),i]-elec[2,i]))
+}
+
+pred2014
 
