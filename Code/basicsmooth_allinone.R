@@ -39,7 +39,6 @@ df = df[order(df$startDate),]
 orig.date = as.Date(df$startDate[1]-1)
 end.date = df$endDate[length(df$endDate)]
 
-
 dateDiff = df[,'endDate'] - df[,'startDate']
 dateDiff2 = dateDiff+1
 nDay = df$n/as.numeric(dateDiff2)
@@ -69,6 +68,7 @@ dateSmooth.num = julian(dateSmooth,origin=orig.date)
 df2 = data.frame(M = pSmooth[,'M'],L = pSmooth[,'L'], KD= pSmooth[,'KD'], C = pSmooth[,'C'],
                  S = pSmooth[,'S'], V = pSmooth[,'V'], MP =  pSmooth[,'MP'], SD = pSmooth[,'SD'],
                    Date = dateSmooth.num, n = nSmooth, house = houseSmooth)
+head(df2)
 
 
 prec2 = matrix(NA,ncol=8, nrow=nrow(df2))
@@ -146,6 +146,7 @@ for(i in 1:ncol(y2)){
 }
 
 
+
 ##################################################################
 ############# POSTERIOR PREDICTIVE CHECKING ######################
 ##################################################################
@@ -167,50 +168,61 @@ colnames(testMin.basic2) = colnames(testMax.basic2) = colnames(testMean.basic2) 
 neg.numb2 =  matrix(NA,ncol=8, nrow=100)
 above12 =  matrix(NA,ncol=8, nrow=100)
 
-for(i in 1:100){
-  for(j in 1:ncol(y2)){
-    yrep_basic = sapply(1:nsim, function(s) rnorm(length(df2$Date),unlist(rChain[[j]][s,df2$Date]), 1/prec2[,j]))
-    min_rep = apply(yrep_basic,2,min)
-    testMin.basic2[i,j] = sum(ifelse(min_rep>= min(df2[,j]),1,0))/length(min_rep) 
-    max_rep = apply(yrep_basic,2,max)
-    testMax.basic2[i,j] = sum(ifelse(max_rep>= max(df2[,j]),1,0))/length(max_rep)
-    mean_rep = apply(yrep_basic,2,mean)
-    testMean.basic2[i,j] = sum(ifelse(mean_rep>= mean(df2[,j]),1,0))/length(mean_rep)
-    neg.numb2[i,j] = sum(ifelse(yrep_basic<0,1,0))/length(mean_rep)
-    above12[i,j] = sum(ifelse(yrep_basic>0,1,0))/length(mean_rep)
+df3 = df[,colnames(y2)]
+df3$startDate = df$startDate
+df3$endDate = df$endDate
+df3$n = df$n
+df3$Date = df$Date
+
+dayssinceorigStart = julian(df3$startDate, origin=orig.date) 
+dayssinceorigEnd = julian(df3$endDate, origin=orig.date) 
+df3$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
+prec=matrix(NA,ncol=8, nrow=nrow(df3))
+colnames(prec) = colnames(df3)[1:8]
+
+
+for(i in 1:8){
+  for(j in 1:nrow(df3)){
+    prec[j,i] = ifelse(is.na(df3[j,i]), NA ,(1 / (df3[j,i]*(1-df3[j,i])/df3[i,'n'])))
   }
 }
-for(i in 1:ncol(y)){
-  print(paste(colnames(testMin.basic2)[i],":"))
-  print(paste("Min:",mean(testMin.basic2[,i]), sep=" "))
-  print(paste("Max:",mean(testMax.basic2[,i]), sep=" "))
-  print(paste("Mean:",mean(testMean.basic2[,i]), sep=" "))
-  print(paste("Negative values:",mean(neg.numb2[,i]), sep=" "))
-  print(paste("Above 1:",mean(above12[,i]), sep=" "))
+
+
+for(i in 1:100){
+  for(j in 1:ncol(y2)){
+    yrep_basic = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[j]][s,df3$Date]), 1/prec[,j]))
+    min_rep = apply(yrep_basic,2,min)
+    testMin.basic2[i,j] = sum(ifelse(min_rep>= min(df3[,j]),1,0))/length(min_rep) 
+    max_rep = apply(yrep_basic,2,max)
+    testMax.basic2[i,j] = sum(ifelse(max_rep>= max(df3[,j]),1,0))/length(max_rep)
+    mean_rep = apply(yrep_basic,2,mean)
+    testMean.basic2[i,j] = sum(ifelse(mean_rep>= mean(df3[,j]),1,0))/length(mean_rep)
+    neg.numb2[i,j] = sum(ifelse(yrep_basic<0,1,0))/(dim(yrep_basic)[1]*dim(yrep_basic)[2])
+    above12[i,j] = sum(ifelse(yrep_basic>1,1,0))/(dim(yrep_basic)[1]*dim(yrep_basic)[2])
+  }
 }
+for(i in 1:ncol(y2)){
+  print(paste(colnames(testMin.basic2)[i],":"))
+  print(paste("Min:",mean(testMin.basic2[,i], na.rm=TRUE), sep=" "))
+  print(paste("Max:",mean(testMax.basic2[,i], na.rm=TRUE), sep=" "))
+  print(paste("Mean:",mean(testMean.basic2[,i], na.rm=TRUE), sep=" "))
+  print(paste("Negative values:",mean(neg.numb2[,i], na.rm=TRUE), sep=" "))
+  print(paste("Above 1:",mean(above12[,i], na.rm=TRUE), sep=" "))
+}
+
 
 dat_cb2 = list()
 for(i in 1:ncol(y2)){
-  dat_cb2[[i]] = sapply(1:nsim, function(s) rnorm(length(df2$Date),unlist(rChain[[i]][s,d2f$Date]), 1/prec2[,i]))
+  dat_cb2[[i]] = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[i]][s,df$Date]), 1/prec[,i]))
 }
+str(dat_cb2)
 
-
-dat_low2 = matrix(NA, ncol=ncol(y), nrow=nrow(y))
-dat_high2 = matrix(NA, ncol=ncol(y), nrow=nrow(y))
+dat_low2 = matrix(NA, ncol=ncol(y2), nrow=nrow(df))
+dat_high2 = matrix(NA, ncol=ncol(y2), nrow=nrow(df))
 for(i in 1:ncol(y2)){
   dat_low2[,i] = apply(dat_cb2[[i]], 1, mean) - (apply(dat_cb2[[i]], 1, sd)*1.96)
   dat_high2[,i] = apply(dat_cb2[[i]], 1, mean) + (apply(dat_cb2[[i]], 1, sd)*1.96)
 }
-
-test2 =list()
-for(j in 1:ncol(y)){
-  test2[[j]] = sapply(1:nsim, function(s) rnorm(length(df2$Date),unlist(rChain[[j]][s,df2$Date]), 1/prec[2,j]))
-}  
-
-for(j in 1:ncol(y)){
-  test[[j]][1,]
-}
-
 
 
 #################################################
@@ -222,18 +234,19 @@ basic_plot2 = list()
 
 y2 = as.matrix(df2[,1:8])
 head(y2)
-cols = c("blue","lightblue3","chartreuse3","darkblue","red","darkred","forestgreen","skyblue3")
+
+cols = c("blue","lightblue3","darkblue","chartreuse3","red","darkred","forestgreen","skyblue3")
 library(ggplot2)
 for(i in 1:ncol(mean_basic2)){
   
   plot_df = data.frame(party = mean_basic2[,i] ,  low=low_basic2[,i]*100, high=high_basic2[,i]*100, time=seq(orig.date,by='days',
-                                                                                                          length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y2)[i], as.numeric(end.date-orig.date)))
-  points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df2$Date], 
-                      y=df2[,i]*100, house=df2$house, party=rep(colnames(y2)[i],length(df2$Date[length(df2$Date)][df2$Date])),
+                       length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y2)[i], as.numeric(end.date-orig.date)))
+  points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df3$Date], 
+                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df$Date[length(df3$Date)][df3$Date])),
                       high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
-  basic_plot2[[i]] <- ggplot(plot_df2) +
+  basic_plot2[[i]] <- ggplot(plot_df) +
     aes(x = time, y = party*100) +
-    geom_line(col=cols[i], alpha=2)  +
+    geom_line(col=cols[i], alpha=1)  +
     geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill=cols[i]) + 
     geom_ribbon(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
     geom_point(data=points, aes(x=x, y=y), alpha = 1, color=cols[i], shape=16, size=1) +    
@@ -246,8 +259,8 @@ for(i in 1:ncol(mean_basic2)){
           panel.grid.major = element_line(colour = "lightgrey"),
           panel.grid.minor = element_blank())
   
-  
 }
+
 
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
@@ -314,7 +327,7 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate
+orig.date = df$startDate[1]-1
 end.date = elec$Date[2]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
@@ -372,7 +385,7 @@ system.time(jags_all2010<- jags.model("jags_dlm.bug", data = all_data22010, n.ch
 
 ninter=10000
 
-system.time(all_out22010 <- coda.samples(jags_all22010,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
+system.time(all_out22010 <- coda.samples(jags_all2010,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
 sum_all22010 = summary(all_out22010)
 out_x22010 = all_out22010[,which(regexpr("x", row.names(sum_all22010$statistics))==1)]
 sum_x22010 = sum_all22010$statistics[which(regexpr("x", row.names(sum_all22010$statistics))==1),]
@@ -445,7 +458,7 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[1]
+orig.date = df$startDate[1]-1
 end.date = elec$Date[3]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
@@ -454,7 +467,7 @@ df = df[-which(df$endDate>=end.date),]
 tail(df)
 
 
-ateDiff = df[,'endDate'] - df[,'startDate']
+dateDiff = df[,'endDate'] - df[,'startDate']
 dateDiff2 = dateDiff+1
 nDay = df$n/as.numeric(dateDiff2)
 
@@ -537,3 +550,12 @@ for(i in 1:ncol(y2)){
 
 pred22014
 
+
+
+######################################
+################ MSE #################
+######################################
+
+laststatemean = mean_basic22014[nrow(mean_basic22014)]
+laststatevar = (sum_x22014[nrow(mean_basic22014),2])^2
+lastphi =

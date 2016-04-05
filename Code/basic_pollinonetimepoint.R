@@ -170,15 +170,6 @@ for(i in 1:ncol(y)){
   dat_high[,i] = apply(dat_cb[[i]], 1, mean) + (apply(dat_cb[[i]], 1, sd)*1.96)
 }
 
-test =list()
-for(j in 1:ncol(y)){
-  test[[j]] = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[j]][s,df$Date]), 1/prec[,j]))
-}  
-
-for(j in 1:ncol(y)){
-  test[[j]][1,]
-}
-
 
 
 #################################################
