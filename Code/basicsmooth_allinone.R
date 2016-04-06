@@ -140,8 +140,8 @@ for(i in 1:ncol(y2)){
   ind.start[i+1] = i*as.numeric(end.date-orig.date)+1
   ind.end[i+1] =  ind.start[i+1]+as.numeric(end.date-orig.date)-1
   mean_basic2[,i] = sum_x2[ind.start[i]:ind.end[i],1]
-  low_basic2[,i] = mean_basic2[,i] - 1.96 * sum_x2[ind.start[i]:ind.end[i],2]
-  high_basic2[,i] = mean_basic2[,i] + 1.96 * sum_x2[ind.start[i]:ind.end[i],2]
+  low_basic2[,i] = mean_basic2[,i] - (1.96 * sum_x2[ind.start[i]:ind.end[i],2])
+  high_basic2[,i] = mean_basic2[,i] + (1.96 * sum_x2[ind.start[i]:ind.end[i],2])
   states_basic2[[i]] = out_x2[,ind.start[i]:ind.end[i]]
 }
 
@@ -213,7 +213,7 @@ for(i in 1:ncol(y2)){
 
 dat_cb2 = list()
 for(i in 1:ncol(y2)){
-  dat_cb2[[i]] = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[i]][s,df$Date]), 1/prec[,i]))
+  dat_cb2[[i]] = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[i]][s,df3$Date]), 1/prec[,i]))
 }
 str(dat_cb2)
 
@@ -234,7 +234,7 @@ basic_plot2 = list()
 
 y2 = as.matrix(df2[,1:8])
 head(y2)
-
+df3$house = df$house
 cols = c("blue","lightblue3","darkblue","chartreuse3","red","darkred","forestgreen","skyblue3")
 library(ggplot2)
 for(i in 1:ncol(mean_basic2)){
@@ -242,7 +242,7 @@ for(i in 1:ncol(mean_basic2)){
   plot_df = data.frame(party = mean_basic2[,i] ,  low=low_basic2[,i]*100, high=high_basic2[,i]*100, time=seq(orig.date,by='days',
                        length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y2)[i], as.numeric(end.date-orig.date)))
   points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df3$Date], 
-                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df$Date[length(df3$Date)][df3$Date])),
+                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date])),
                       high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
   basic_plot2[[i]] <- ggplot(plot_df) +
     aes(x = time, y = party*100) +

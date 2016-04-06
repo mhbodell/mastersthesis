@@ -85,7 +85,6 @@ all_data = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeri
                 phi = NULL, day=df$Date )
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
-update(jags_all,1000)
 ninter=10000
 system.time(all_out <- coda.samples(jags_all,variable.names = c("x", "phi"), n.iter = ninter, thin = 5, burnin=2000))
 sum_all = summary(all_out)
@@ -94,7 +93,7 @@ sum_x = sum_all$statistics[which(regexpr("x", row.names(sum_all$statistics))==1)
 out_phi = all_out[,which(regexpr("phi", row.names(sum_all$statistics))==1)]
 
 par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi[[1]])){plot(out_phi[,i], main=i)}
+for(i in 1: ncol(out_phi[[1]])){plot(out_phi[,i])}
 par(mfrow=c(1,1))  
 
 ###    M        L        C       KD        S         V       MP        SD##
