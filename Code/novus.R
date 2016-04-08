@@ -5,9 +5,9 @@
 library(dplyr)
 orig.date = as.Date(datM$collectPeriodFrom[1]-1)
 end.date = as.Date(datM$collectPeriodFrom[length(datM$collectPeriodFrom)]) #
-datM3 = datM
+df4 = df
 
-dateDiff = datM3[,3] - datM3[,2]
+dateDiff = df[,3] - datM3[,2]
 dateDiff2 = dateDiff+1
 nDay = datM3$n/as.numeric(dateDiff2)
 MSmooth = rep(datM3$M,dateDiff2)

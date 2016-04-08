@@ -23,7 +23,7 @@ elec = data.frame(rbind( c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.02
                          c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
                          c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286))) #c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0.00000001),
 
-colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
+colnames(elec) = partynames =c("M","L","KD","C","S","MP","V","SD")
 row.names(elec) = c("2006","2010","2014") #"2002",
 elec$Date = c( as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #as.Date("2002-09-12"),
 n=c((0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000)) #(0.801*6722*1000),
@@ -104,26 +104,28 @@ init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
 eps[i] ~ dgamma(1,1)
 phi[i] <- 1/eps[i]
-house[i,12] <- 1
+ee[i, 12] <- 1
+house[i,12] <- 1/ee[i,12]
 for(k in 1:(nhouses-1)){
-house[i,k] ~ dgamma(1, 1)
+ee[i,k] ~ dgamma(1, 1)
+house[i,k] <- 1/ee[i,k]
 }
 }
 
 }
 '
-y = as.matrix(df[,1:8])
+y = as.matrix(df2[,1:8])
 #factor(df$house,levels(df$house)[c(2,1,3,4,5,6,7,8,9,10,11,12)])
-data_multhouse = list(y = y, prec = prec, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                     nparties = ncol(y), day = df$Date, npolls = nrow(df), nperiods = as.numeric(end.date - orig.date),
-                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(as.factor(df$house)),
-                     house = matrix(NA,ncol=length(levels(as.factor(df$house))), nrow=ncol(y)))
+data_multhouse = list(y = y, prec = prec2, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
+                     nparties = ncol(y), day = df2$Date, npolls = nrow(df2), nperiods = as.numeric(end.date - orig.date),
+                     nhouses = length(levels(as.factor(df2$house))), org=as.numeric(as.factor(df2$house)),
+                     house = matrix(NA,ncol=length(levels(as.factor(df2$house))), nrow=ncol(y)))
 writeLines(jags_multhouse,con="jags_multhouse.bug")
 system.time(jags_multhouse <- jags.model("jags_multhouse.bug", data = data_multhouse, n.chain=3))
 
 
 ninter=10000
-system.time(mult_out <- coda.samples(jags_multhouse,variable.names = c("x", "phi", "house"), n.iter = ninter, thin = 5, burnin=2000))
+system.time(mult_out <- coda.samples(jags_multhouse,variable.names = c("x", "phi", "house"), n.iter = ninter, thin = 5))
 system.time(sum_mult <- summary(mult_out))
 multout_x = mult_out[,which(regexpr("x", row.names(sum_mult$statistics))==1)]
 multsum_x = sum_mult$statistics[which(regexpr("x", row.names(sum_mult$statistics))==1),]
@@ -183,7 +185,24 @@ for(k in 1:ncol(prec2)){
   }
 }
 
+df3 = df[,colnames(y)]
+df3$startDate = df$startDate
+df3$endDate = df$endDate
+df3$n = df$n
+df3$Date = df$Date
+df3$house = df$house
 
+dayssinceorigStart = julian(df3$startDate, origin=orig.date) 
+dayssinceorigEnd = julian(df3$endDate, origin=orig.date) 
+df3$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
+
+prec = matrix(NA,ncol=8, nrow=nrow(df3))
+colnames(prec) = colnames(df3)[1:8]
+for(i in 1:8){
+  for(j in 1:nrow(df3)){
+    prec[j,i] = ifelse(is.na(df3[j,i]), NA ,(1 / (df3[j,i]*(1-df2[j,i])/df3[i,'n'])))
+  }
+}
 
 
 testMin_mult = matrix(NA,ncol=8, nrow=100)
@@ -192,11 +211,11 @@ testMean_mult = matrix(NA,ncol=8, nrow=100)
 testVar_mult = matrix(NA,ncol=8, nrow=100)
 negval = matrix(NA,ncol=8, nrow=100)
 above1 = matrix(NA,ncol=8, nrow=100)
-colnames(testMin_mult) = colnames(testMax_mult) = colnames(testMean_mult) = c("M","L","KD","C","S","MP","V","SD") 
+colnames(testMin_mult) = colnames(testMax_mult) = colnames(testMean_mult) = partynames
 nsim = dim(mult_out[[1]])[1]
 for(i in 1:100){
   for(j in 1:ncol(y)){
-    yrep_mult = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[j]][s,df$Date]), 1/prec[,j]*he[,j]))
+    yrep_mult = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[j]][s,df3$Date]), 1/(prec[,j])*he[,j])))
     min_rep = apply(yrep_mult,2,min)
     testMin_mult[i,j] = sum(ifelse(min_rep>= min(df[,j]),1,0))/length(min_rep) 
     max_rep = apply(yrep_mult,2,max)
@@ -222,7 +241,7 @@ for(i in 1:ncol(y)){
 
 dat_cb = list()
 for(i in 1:ncol(y)){
-  dat_cb[[i]] = sapply(1:nsim, function(s) rnorm(length(df$Date),unlist(rChain[[i]][s,df$Date]), 1/prec[,i]*he[,i]))
+  dat_cb[[i]] = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[i]][s,df3$Date]), (1/prec[,i])*he[,i]))
 }
 str(dat_cb)
 
@@ -338,7 +357,7 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[2]-1
+orig.date = df$startDate[1]-1
 end.date = as.Date(elec$Date[2])
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
@@ -347,21 +366,55 @@ df = df[-which(df$Date>=as.numeric(end.date-orig.date)),]
 head(df)
 
 
-prec=matrix(NA,ncol=8, nrow=nrow(df))
+dateDiff = df[,'endDate'] - df[,'startDate']
+dateDiff2 = dateDiff+1
+nDay = df$n/as.numeric(dateDiff2)
+
+pSmooth = matrix(NA, ncol=length(partynames), nrow=sum(dateDiff2))
+colnames(pSmooth) = partynames
+j = 1
+for(i in partynames){
+  pSmooth[,j] = rep(df[,i],dateDiff2)
+  j= j+1
+}
+
+nSmooth = rep(nDay,dateDiff2)
+houseSmooth = rep(df$house, dateDiff2)
+
+ee = list()
+for(i in 1:nrow(df)){
+  ee[[i]] = seq(df[i,'startDate'], df[i,'endDate'], by="days")
+}
+
+dateSmooth = ee[[1]]
+for(i in 2:nrow(df)){
+  dateSmooth = c(dateSmooth, ee[[i]])
+}
+
+dateSmooth.num = julian(dateSmooth,origin=orig.date)
+df2 = data.frame(M = pSmooth[,'M'],L = pSmooth[,'L'], KD= pSmooth[,'KD'], C = pSmooth[,'C'],
+                 S = pSmooth[,'S'], V = pSmooth[,'V'], MP =  pSmooth[,'MP'], SD = pSmooth[,'SD'],
+                 Date = dateSmooth.num, n = nSmooth, house = houseSmooth)
+head(df2)
+
+
+prec2 = matrix(NA,ncol=8, nrow=nrow(df2))
+colnames(prec2) = colnames(df2)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
+  for(j in 1:nrow(df2)){
+    prec2[j,i] = ifelse(is.na(df2[j,i]), NA ,(1 / (df2[j,i]*(1-df2[j,i])/df2[i,'n'])))
   }
 }
 
-y = as.matrix(df[,1:8])
+
+y = as.matrix(df2[,1:8])
 #factor(df$house,levels(df$house)[c(2,1,3,4,5,6,7,8,9,10,11,12)])
 jags_multhouse ='
 model{
 #measurement model
 for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[j,org[i]], prec[i,j])
+y[i,j] ~ dnorm(x[day[i],j], house[j,org[i]]*prec[i,j])
 }
 }
 
@@ -378,24 +431,26 @@ init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
 eps[i] ~ dgamma(1,1)
 phi[i] <- 1/eps[i]
-house[i,12] <- 0
+ee[i, 12] <- 1
+house[i,12] <- 1/ee[i,12]
 for(k in 1:(nhouses-1)){
-house[i,k] ~ dnorm(0, 0.01)
+ee[i,k] ~ dgamma(1, 1)
+house[i,k] <- 1/ee[i,k]
 }
 }
 
 }
 '
 writeLines(jags_multhouse,con="jags_multhouse.bug")
-data_multhouse_2010 = list(y = y, prec = prec, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                          nparties = ncol(y), day = df$Date, npolls = nrow(df), nperiods = as.numeric(end.date - orig.date),
-                          nhouses = length(levels(as.factor(df$house))), org=as.numeric(as.factor(df$house)),
-                          house = matrix(NA,ncol=length(levels(as.factor(df$house))), nrow=ncol(y)))
+data_multhouse_2010 = list(y = y, prec = prec2, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
+                          nparties = ncol(y), day = df2$Date, npolls = nrow(df2), nperiods = as.numeric(end.date - orig.date),
+                          nhouses = length(levels(as.factor(df2$house))), org=as.numeric(as.factor(df2$house)),
+                          house = matrix(NA,ncol=length(levels(as.factor(df2$house))), nrow=ncol(y)))
 
 system.time(jags_multhouse_2010 <- jags.model("jags_multhouse.bug", data = data_multhouse_2010, n.chain=3))
 
 
-ninter=1000
+ninter=10000
 system.time(mult_out_2010 <- coda.samples(jags_multhouse_2010,variable.names = c("x", "phi", "house"), n.iter = ninter, thin = 5, burnin=2000))
 system.time(sum_mult_2010 <- summary(mult_out_2010))
 multout_x_2010 = mult_out_2010[,which(regexpr("x", row.names(sum_mult_2010$statistics))==1)]
@@ -463,30 +518,60 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[2]-1
+orig.date = df$startDate[1]-1
 end.date = as.Date(elec$Date[3])
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
 df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
 df = df[-which(df$Date>=as.numeric(end.date-orig.date)),]
-head(df)
+tail(df)
+
+dateDiff = df[,'endDate'] - df[,'startDate']
+dateDiff2 = dateDiff+1
+nDay = df$n/as.numeric(dateDiff2)
+
+pSmooth = matrix(NA, ncol=length(partynames), nrow=sum(dateDiff2))
+colnames(pSmooth) = partynames
+j = 1
+for(i in partynames){
+  pSmooth[,j] = rep(df[,i],dateDiff2)
+  j= j+1
+}
+
+nSmooth = rep(nDay,dateDiff2)
+houseSmooth = rep(df$house, dateDiff2)
+
+ee = list()
+for(i in 1:nrow(df)){
+  ee[[i]] = seq(df[i,'startDate'], df[i,'endDate'], by="days")
+}
+
+dateSmooth = ee[[1]]
+for(i in 2:nrow(df)){
+  dateSmooth = c(dateSmooth, ee[[i]])
+}
+
+dateSmooth.num = julian(dateSmooth,origin=orig.date)
+df2 = data.frame(M = pSmooth[,'M'],L = pSmooth[,'L'], KD= pSmooth[,'KD'], C = pSmooth[,'C'],
+                 S = pSmooth[,'S'], V = pSmooth[,'V'], MP =  pSmooth[,'MP'], SD = pSmooth[,'SD'],
+                 Date = dateSmooth.num, n = nSmooth, house = houseSmooth)
+head(df2)
 
 
-prec=matrix(NA,ncol=8, nrow=nrow(df))
+prec2 = matrix(NA,ncol=8, nrow=nrow(df2))
+colnames(prec2) = colnames(df2)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
+  for(j in 1:nrow(df2)){
+    prec2[j,i] = ifelse(is.na(df2[j,i]), NA ,(1 / (df2[j,i]*(1-df2[j,i])/df2[i,'n'])))
   }
 }
 
-y = as.matrix(df[,1:8])
-#factor(df$house,levels(df$house)[c(2,1,3,4,5,6,7,8,9,10,11,12)])
 jags_multhouse ='
 model{
 #measurement model
 for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[j,org[i]], prec[i,j])
+y[i,j] ~ dnorm(x[day[i],j], house[j,org[i]]*prec[i,j])
 }
 }
 
@@ -503,24 +588,27 @@ init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
 eps[i] ~ dgamma(1,1)
 phi[i] <- 1/eps[i]
-house[i,12] <- 0
+ee[i, 12] <- 1
+house[i,12] <- 1/ee[i,12]
 for(k in 1:(nhouses-1)){
-house[i,k] ~ dnorm(0, 0.01)
+ee[i,k] ~ dgamma(1, 1)
+house[i,k] <- 1/ee[i,k]
 }
 }
 
 }
 '
+y = as.matrix(df2[,1:8])
 writeLines(jags_multhouse,con="jags_multhouse.bug")
-data_multhouse_2014 = list(y = y, prec = prec, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                          nparties = ncol(y), day = df$Date, npolls = nrow(df), nperiods = as.numeric(end.date - orig.date),
-                          nhouses = length(levels(as.factor(df$house))), org=as.numeric(as.factor(df$house)),
-                          house = matrix(NA,ncol=length(levels(as.factor(df$house))), nrow=ncol(y)))
+data_multhouse_2014 = list(y = y, prec = prec2, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
+                          nparties = ncol(y), day = df2$Date, npolls = nrow(df2), nperiods = as.numeric(end.date - orig.date),
+                          nhouses = length(levels(as.factor(df2$house))), org=as.numeric(as.factor(df2$house)),
+                          house = matrix(NA,ncol=length(levels(as.factor(df2$house))), nrow=ncol(y)))
 
 system.time(jags_multhouse_2014 <- jags.model("jags_multhouse.bug", data = data_multhouse_2014, n.chain=3))
 
 
-ninter=1000
+ninter=10000
 system.time(mult_out_2014 <- coda.samples(jags_multhouse_2014,variable.names = c("x", "phi", "house"), n.iter = ninter, thin = 5, burnin=2000))
 system.time(sum_mult_2014 <- summary(mult_out_2014))
 multout_x_2014 = mult_out_2014[,which(regexpr("x", row.names(sum_mult_2014$statistics))==1)]
@@ -535,8 +623,8 @@ for(i in 1:ncol(y)){
   ind.start[i+1] = i*as.numeric(end.date-orig.date)+1
   ind.end[i+1] =  ind.start[i+1]+as.numeric(end.date-orig.date)-1
   mean_mult2014[,i] = multsum_x2014[ind.start[i]:ind.end[i],1]
-  low_mult2014[,i] = mean_mult2014[,i] - 1.96 * multsum_x2014[ind.start[i]:ind.end[i],2]
-  high_mult2014[,i] = mean_mult2014[,i] + 1.96 * multsum_x2014[ind.start[i]:ind.end[i],2]
+  low_mult2014[,i] = mean_mult2014[,i] - (1.96 * multsum_x2014[ind.start[i]:ind.end[i],2])
+  high_mult2014[,i] = mean_mult2014[,i] + (1.96 * multsum_x2014[ind.start[i]:ind.end[i],2])
   states_mult2014[[i]] = multout_x_2014[,ind.start[i]:ind.end[i]]
 }
 

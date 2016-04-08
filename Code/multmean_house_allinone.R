@@ -90,28 +90,28 @@ jags_addhouse ='
 model{
 #measurement model
 for(j in 1:nparties){
-  for(i in 1:npolls){
-   y[i,j] ~ dnorm(x[day[i],j]+house[j,org[i]], prec[i,j])
-  }
+for(i in 1:npolls){
+y[i,j] ~ dnorm(x[day[i],j]*house[j,org[i]], prec[i,j])
+}
 }
 
 #dynamic model
 for(j in 1:nparties){
-  for(i in 2:nperiods){
-  x[i,j] ~ dnorm(x[i-1,j],phi[j])
-  }
+for(i in 2:nperiods){
+x[i,j] ~ dnorm(x[i-1,j],phi[j])
+}
 }
 ## priors
 for(i in 1:nparties){
-  init.m[i] ~ dunif(0,1) 
-  init.v[i] ~ dgamma(0.01,0.01)
-  x[1,i] ~ dnorm(init.m[i], init.v[i])
-  eps[i] ~ dgamma(1,1)
-  phi[i] <- 1/eps[i]
-  house[i,12] <- 0
-  for(k in 1:(nhouses-1)){
-    house[i,k] ~ dnorm(0, 0.01)
-  }
+init.m[i] ~ dunif(0,1) 
+init.v[i] ~ dgamma(0.01,0.01)
+x[1,i] ~ dnorm(init.m[i], init.v[i])
+eps[i] ~ dgamma(1,1)
+phi[i] <- 1/eps[i]
+house[i,12] <- 1
+for(k in 1:(nhouses-1)){
+house[i,k] ~ dnorm(1, 0.01)
+}
 }
 
 }
@@ -120,9 +120,9 @@ for(i in 1:nparties){
 y = as.matrix(df2[,1:8])
 #factor(df$house,levels(df$house)[c(2,1,3,4,5,6,7,8,9,10,11,12)])
 data_addhouse = list(y = y, prec = prec2, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                    nparties = ncol(y), day = df2$Date, npolls = nrow(df2), nperiods = as.numeric(end.date - orig.date),
-                    nhouses = length(levels(as.factor(df2$house))), org=as.numeric(as.factor(df2$house)),
-                    house = matrix(NA,ncol=length(levels(as.factor(df2$house))), nrow=ncol(y)))
+                     nparties = ncol(y), day = df2$Date, npolls = nrow(df2), nperiods = as.numeric(end.date - orig.date),
+                     nhouses = length(levels(as.factor(df2$house))), org=as.numeric(as.factor(df2$house)),
+                     house = matrix(NA,ncol=length(levels(as.factor(df2$house))), nrow=ncol(y)))
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 system.time(jags_addhouse <- jags.model("jags_addhouse.bug", data = data_addhouse, n.chain=3))
 
@@ -185,11 +185,11 @@ above1_add =  matrix(NA,ncol=8, nrow=100)
 he = matrix(NA, ncol=ncol(prec2),nrow=nrow(df))
 for(k in 1:ncol(prec2)){
   for(i in 1:length(colnames(map_house))){
-  ins = colnames(map_house)[i]
+    ins = colnames(map_house)[i]
     for(j in 1:nrow(df)){
       if(df[j,'house']==ins){
         he[j,k] = map_house[k,i]
-     } else{}
+      } else{}
     }
   }
 }
@@ -215,42 +215,11 @@ for(i in 1:8){
 }
 
 
-colnames(prec) = colnames(df3)[1:8]
-
-ysim = matrix(NA,ncol=nrow(df3), nrow=nsim)
-
-simfunc = function(data){
-
-  x = as.matrix(data)
-  for(i in 1:nrow(x)){
-    for(t in 1:nrow(df3)){
-      time = df3$Date[t]
-      ysim[i,t] = rnorm(1, x[i,time]+he[t,1], 1/prec[,1]) 
-  }
-  }
-  ymin = apply(ysim,1,min)
-  ymax = apply(ysim,1,max)
-  ymean = apply(ysim,1,mean)
-  postpred[k,1] = sum(ifelse(ymin<min(df3[,1]),1,0))/length(ymin)
-  postpred[k,2] = sum(ifelse(ymax<max(df3[,1]),1,0))/length(ymax)
-  postpred[k,2] = sum(ifelse(ymax<max(df3[,1]),1,0))/length(ymax)
-}
-  out(ysim)
-}
-
-simfunc(rChain[[1]])
-data=rChain[[1]]
-
-dim(ysim)
-apply(ysim,2,mean) + (1.96*apply(ysim,2,sd))
-apply(ysim,2,mean) - (1.96*apply(ysim,2,sd))
-
-
 colnames(testMin_add) = colnames(testMax_add) = colnames(testMean_add) =colnames(neg.numb_add) = colnames(above1_add)=  c("M","L","KD","C","S","MP","V","SD") 
 nsim = dim(add_out[[1]])[1]
 for(i in 1:100){
   for(j in 1:ncol(y)){
-    yrep_add = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[j]][s,df3$Date])+he[,j], 1/prec[,j]))
+    yrep_add = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[j]][s,df3$Date])*he[,j], 1/prec[,j]))
     min_rep = apply(yrep_add,2,min)
     testMin_add[i,j] = sum(ifelse(min_rep>= min(df3[,j]),1,0))/length(min_rep) 
     max_rep = apply(yrep_add,2,max)
@@ -261,7 +230,7 @@ for(i in 1:100){
     testVar_add[i,j] = sum(ifelse(var_rep>= var(df3[,j]),1,0))/length(var_rep)
     neg.numb_add[i,j] = sum(ifelse(yrep_add<0,1,0))/(dim(yrep_add)[1]*dim(yrep_add)[2])
     above1_add[i,j] = sum(ifelse(yrep_add>1,1,0))/(dim(yrep_add)[1]*dim(yrep_add)[2])
-      }
+  }
 }
 
 for(i in 1:ncol(y)){
@@ -276,7 +245,7 @@ for(i in 1:ncol(y)){
 
 dat_cb = list()
 for(i in 1:ncol(y)){
-  dat_cb[[i]] = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[i]][s,df3$Date])+he[,i], 1/prec[,i]))
+  dat_cb[[i]] = sapply(1:nsim, function(s) rnorm(length(df3$Date),unlist(rChain[[i]][s,df3$Date])*he[,i], 1/prec[,i]))
 }
 str(dat_cb)
 
@@ -292,7 +261,7 @@ for(i in 1:ncol(y)){
 
 
 
-  
+
 #################################################
 ################# PLOTS #########################
 #################################################
@@ -302,12 +271,12 @@ add_plot = list()
 
 y = as.matrix(df2[,1:8])
 head(y)
-cols = c("blue","lightblue3","chartreuse3","darkblue","red","darkred","forestgreen","skyblue3")
+cols = c("blue","lightblue3","darkblue","chartreuse3","red","darkred","forestgreen","skyblue3")
 library(ggplot2)
 for(i in 1:ncol(mean_add)){
   
   plot_df = data.frame(party = mean_add[,i] ,  low=low_add[,i]*100, high=high_add[,i]*100, time=seq(orig.date,by='days',
-            length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y)[i], as.numeric(end.date-orig.date)))
+                       length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y)[i], as.numeric(end.date-orig.date)))
   points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df3$Date], 
                       y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date])),
                       high_dat=dat_high[,i]*100, low_dat=dat_low[,i]*100 )
@@ -450,7 +419,7 @@ model{
 #measurement model
 for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[j,org[i]], prec[i,j])
+y[i,j] ~ dnorm(x[day[i],j]*house[j,org[i]], prec[i,j])
 }
 }
 
@@ -467,9 +436,9 @@ init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
 eps[i] ~ dgamma(1,1)
 phi[i] <- 1/eps[i]
-house[i,12] <- 0
+house[i,12] <- 1
 for(k in 1:(nhouses-1)){
-house[i,k] ~ dnorm(0, 0.01)
+house[i,k] ~ dnorm(1, 0.01)
 }
 }
 
@@ -480,9 +449,9 @@ y = as.matrix(df2[,1:8])
 df = df2
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 data_addhouse_2010 = list(y = y, prec = prec2, x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                     nparties = ncol(y), day = df$Date, npolls = nrow(df), nperiods = as.numeric(end.date - orig.date),
-                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(as.factor(df$house)),
-                     house = matrix(NA,ncol=length(levels(as.factor(df$house))), nrow=ncol(y)))
+                          nparties = ncol(y), day = df$Date, npolls = nrow(df), nperiods = as.numeric(end.date - orig.date),
+                          nhouses = length(levels(as.factor(df$house))), org=as.numeric(as.factor(df$house)),
+                          house = matrix(NA,ncol=length(levels(as.factor(df$house))), nrow=ncol(y)))
 
 system.time(jags_addhouse_2010 <- jags.model("jags_addhouse.bug", data = data_addhouse_2010, n.chain=3))
 
@@ -611,7 +580,7 @@ model{
 #measurement model
 for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[j,org[i]], prec[i,j])
+y[i,j] ~ dnorm(x[day[i],j]*house[j,org[i]], prec[i,j])
 }
 }
 
@@ -628,9 +597,9 @@ init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
 eps[i] ~ dgamma(1,1)
 phi[i] <- 1/eps[i]
-house[i,12] <- 0
+house[i,12] <- 1
 for(k in 1:(nhouses-1)){
-house[i,k] ~ dnorm(0, 0.01)
+house[i,k] ~ dnorm(1, 0.01)
 }
 }
 
@@ -649,7 +618,7 @@ system.time(jags_addhouse_2014 <- jags.model("jags_addhouse.bug", data = data_ad
 
 
 ninter=10000
-system.time(add_out_2014 <- coda.samples(jags_addhouse_2014,variable.names = c("x", "phi", "house"), n.iter = ninter, thin = 5))
+system.time(add_out_2014 <- coda.samples(jags_addhouse_2014,variable.names = c("x", "phi", "house"), n.iter = ninter, thin = 5, burnin=2000))
 system.time(sum_add_2014 <- summary(add_out_2014))
 addout_x_2014 = add_out_2014[,which(regexpr("x", row.names(sum_add_2014$statistics))==1)]
 addsum_x2014 = sum_add_2014$statistics[which(regexpr("x", row.names(sum_add_2014$statistics))==1),]

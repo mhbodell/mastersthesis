@@ -86,7 +86,7 @@ all_data = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeri
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
 ninter=10000
-system.time(all_out <- coda.samples(jags_all,variable.names = c("x", "phi"), n.iter = ninter, thin = 5, burnin=2000))
+system.time(all_out <- coda.samples(jags_all,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
 sum_all = summary(all_out)
 out_x = all_out[,which(regexpr("x", row.names(sum_all$statistics))==1)]
 sum_x = sum_all$statistics[which(regexpr("x", row.names(sum_all$statistics))==1),]
@@ -130,6 +130,7 @@ nsim = dim(all_out[[i]])[1]
 testMin.basic = matrix(NA,ncol=8, nrow=100)
 testMax.basic = matrix(NA,ncol=8, nrow=100)
 testMean.basic = matrix(NA,ncol=8, nrow=100)
+testVar.basic = matrix(NA,ncol=8, nrow=100)
 colnames(testMin.basic) = colnames(testMax.basic) = colnames(testMean.basic) = c("M","L","KD","C","S","MP","V","SD") 
 neg.numb =  matrix(NA,ncol=8, nrow=100)
 above1 =  matrix(NA,ncol=8, nrow=100)
@@ -143,8 +144,10 @@ for(i in 1:100){
   testMax.basic[i,j] = sum(ifelse(max_rep>= max(df[,j]),1,0))/length(max_rep)
   mean_rep = apply(yrep_basic,2,mean)
   testMean.basic[i,j] = sum(ifelse(mean_rep>= mean(df[,j]),1,0))/length(mean_rep)
-  neg.numb[i,j] = sum(ifelse(yrep_basic<0,1,0))/length(mean_rep)
-  above1[i,j] = sum(ifelse(yrep_basic>0,1,0))/length(mean_rep)
+  var_rep = apply(yrep_basic,2,var)
+  testVar.basic[i,j] = sum(ifelse(var_rep>= var(df[,j]),1,0))/length(var_rep)
+  neg.numb[i,j] = sum(ifelse(yrep_basic<0,1,0))/(dim(yrep_basic)[1]*dim(yrep_basic)[2])
+  above1[i,j] = sum(ifelse(yrep_basic>1,1,0))/(dim(yrep_basic)[1]*dim(yrep_basic)[2])
   }
 }
 for(i in 1:ncol(y)){
@@ -152,8 +155,9 @@ for(i in 1:ncol(y)){
   print(paste("Min:",mean(testMin.basic[,i]), sep=" "))
   print(paste("Max:",mean(testMax.basic[,i]), sep=" "))
   print(paste("Mean:",mean(testMean.basic[,i]), sep=" "))
+  print(paste("Var:",mean(testVar.basic[,i]), sep=" "))
   print(paste("Negative values:",mean(neg.numb[,i]), sep=" "))
-  print(paste("Negative values:",mean(above1[,i]), sep=" "))
+  print(paste("Above 1:",mean(above1[,i]), sep=" "))
 }
 
 dat_cb = list()
