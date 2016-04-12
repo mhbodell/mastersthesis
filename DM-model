@@ -1,0 +1,26 @@
+
+model {
+#observed model
+for(i in 1:npolls) { 
+y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i])
+}
+
+#dynamic model
+for(i in 2:nperiod) {
+  Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 10000
+  x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
+}
+
+for (i in 1:nparties) { 
+  alpha[i] ~ dunif(10, 100) 
+}
+x[1, 1:nparties] ~ ddirch(alpha[])
+
+for (i in 1:nparties) { 
+  house[12, i] <- 0
+  for(j in 1:(nhouses-1)) { 
+  house[j, i] ~ dnorm(0, 0.01)
+  }
+}
+}
+

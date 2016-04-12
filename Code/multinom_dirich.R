@@ -47,8 +47,8 @@ df$Week
 Y = df[c("M","L","KD","C","S","MP","V","SD")] * df$n
 Y = sapply(Y, function(x) round(x,0))
 
-data = list(nperiod = max(df$Week),nhouses = length(levels(as.factor(df$house))),
-            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Week, org = as.numeric(as.factor(df$house)),
+data = list(nperiod = max(df$Date),nhouses = length(levels(as.factor(df$house))),
+            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Date, org = as.numeric(as.factor(df$house)),
             n = rowSums(Y), house = matrix(NA, ncol=ncol(Y), nrow=length(levels(as.factor(df$house)))))
 
 multi_diri <- '
@@ -60,12 +60,12 @@ y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i
 
 #dynamic model
 for(i in 2:nperiod) {
-  Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 1000
+  Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 10000
   x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
 }
 
 for (i in 1:nparties) { 
-  alpha[i] ~ dunif(10, 1000) 
+  alpha[i] ~ dunif(10, 100) 
 }
 x[1, 1:nparties] ~ ddirch(alpha[])
 
@@ -75,12 +75,30 @@ for (i in 1:nparties) {
   house[j, i] ~ dnorm(0, 0.01)
   }
 }
+
+for (i in 2:nparties) { 
+house[1, i] <- -sum( house[2:nhouses, i] )
+}
+for(i in 1:nhouses) { 
+house[i, 1] <- -sum( house[i, 2:nparties] )
+}
+
+
+## -- vague normal priors for house effects - centred on zero
+for (party in 2:PARTIES) { # for each party (cols)
+for(house in 2:HOUSECOUNT) { #  (rows)
+houseEffect[house, party] ~ dnorm(0, pow(0.1, -2))
+}
+}
+
+
 }
 '
 
 writeLines(multi_diri, con="DM-model")
-system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=1000, n.chain=3))
-ninter = 1000
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=3000, n.chain=3))
+update(jags_DM,1000)
+ninter = 10000
 system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 5))
 system.time(sumDM <-  summary(outDM))
 x = sumDM$statistics[which(regexpr("x",row.names(sumDM$statistics))==1),]
