@@ -21,9 +21,9 @@ y$n = polls$n[-no_n]
 y[,1:9] = y[,1:9]/100
 df = na.omit(y[,-9])
 
-elec = data.frame(rbind( c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
-                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
-                        c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286)))
+elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3050,0.0716,0.0568,0.0656,0.311,0.0745,0.069,0.0578),
+                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))
 
 colnames(elec) = partynames
 row.names(elec) = c("2006","2010","2014") #"2002",
@@ -100,7 +100,7 @@ par(mfrow=c(1,1))
 
 ###    M        L        C       KD        S         V       MP        SD##
 
-nperiods=max(df[,'Date'])
+nperiods=as.numeric(end.date-orig.date)
 nsim = dim(all_out[[1]])[1]*3
 mean_basic2 = matrix(NA, ncol=ncol(y), nrow=nperiods)
 ind.start = 1
@@ -200,8 +200,8 @@ for(i in 1:ncol(mean_basic2)){
   basic_plot2[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
-    geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill=cols[i]) + 
-    geom_ribbon(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
+    geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill=cols[i]) + 
+    #geom_ribbon(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
     geom_point(data=points, aes(x=x, y=y), alpha = 1, color=cols[i], shape=16, size=1) +    
     labs(x="Date", y=paste("Support for", sep=" ", unique(plot_df$party), paste("(%)", sep=" "), collapse="")) +
     theme_bw() +
@@ -264,9 +264,9 @@ y$n = polls$n[-no_n]
 y[,1:9] = y[,1:9]/100
 df = na.omit(y[,-9])
 
-elec = data.frame(rbind( c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
-                         c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
-                         c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286)))
+elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3050,0.0716,0.0568,0.0656,0.311,0.0745,0.069,0.0578),
+                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))
 
 colnames(elec) = partynames
 row.names(elec) = c("2006","2010","2014") #"2002",
@@ -298,6 +298,34 @@ for(i in 1:8){
   }
 }
 
+jags_dlm ='
+model{
+
+#observed model
+for(j in 1:nparties){
+for(i in 1:npolls){
+y[i,j] ~ dnorm(x[day[i],j],prec[i,j])
+}
+}
+
+#dynamic model
+for(j in 1:nparties){
+for(i in 2:nperiods){
+x[i,j] ~ dnorm(x[i-1,j],phi[j])
+}
+}
+
+## priors
+for(i in 1:nparties){
+init.m[i] ~ dunif(0,1)
+init.v[i] ~ dgamma(0.01,0.01)
+x[1,i] ~ dnorm(init.m[i],init.v[i])
+eps[i] ~ dgamma(1,1)
+phi[i] <- 1/eps[i]
+}
+
+}
+'
 
 head(df)
 head(prec)
@@ -319,33 +347,47 @@ par(mfrow=c(3,3))
 for(i in 1: ncol(out_phi2010[[1]])){plot(out_phi2010[,i])}
 par(mfrow=c(1,1))  
 
-mean_basic2010 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
+nperiods=as.numeric(end.date-orig.date)
+nsim = dim(all_out2010[[1]])[1]*3
+mean_basic2010 = matrix(NA, ncol=ncol(y), nrow=nperiods)
 ind.start = 1
-ind.end = as.numeric(end.date-orig.date)
-high_basic2010 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
-low_basic2010 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
-states_basic2010 = list()
+ind.end = nperiods
+high_basic2010 = high_basic22 = matrix(NA, ncol=ncol(y), nrow=nperiods)
+low_basic2010 = low_basic22 = matrix(NA, ncol=ncol(y), nrow=nperiods)
+percentile5 = round(nsim*0.05)
+percentile95 = round(nsim*0.95)
+states_basic2 = list()
 for(i in 1:ncol(y)){
-  ind.start[i+1] = i*as.numeric(end.date-orig.date)+1
-  ind.end[i+1] =  ind.start[i+1]+as.numeric(end.date-orig.date)-1
-  mean_basic2010[,i] = sum_x2010[ind.start[i]:ind.end[i],1]
-  low_basic2010[,i] = mean_basic2010[,i] - 1.96 * sum_x2010[ind.start[i]:ind.end[i],2]
-  high_basic2010[,i] = mean_basic2010[,i] + 1.96 * sum_x2010[ind.start[i]:ind.end[i],2]
-  states_basic2010[[i]] = out_x2010[,ind.start[i]:ind.end[i]]
+  ind.start[i+1] = i*nperiods+1
+  ind.end[i+1] =  ind.start[i+1]+nperiods-1
+  mean_basic2010[,i] = apply(rbind(out_x2010[[1]][,ind.start[i]:ind.end[i]],out_x2010[[2]][,ind.start[i]:ind.end[i]],out_x2010[[3]][,ind.start[i]:ind.end[i]]),2,mean)
+  low_basic2010[,i] = apply(rbind(out_x2010[[1]][,ind.start[i]:ind.end[i]],out_x2010[[2]][,ind.start[i]:ind.end[i]],out_x2010[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
+  high_basic2010[,i] = apply(rbind(out_x2010[[1]][,ind.start[i]:ind.end[i]],out_x2010[[2]][,ind.start[i]:ind.end[i]],out_x2010[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
-pred2010 = matrix(NA, ncol=5, nrow=8)
-row.names(pred2010) = c("M","L","KD","C","S","MP","V","SD")
-colnames(pred2010) = c("Elec_res","MAP","Low","High","Diff")
-for(i in 1:ncol(y)){
-  pred2010[i,] =  cbind(elec[2,i],mean_basic2010[nrow(mean_basic2010),i],low_basic2010[nrow(low_basic2010),i],high_basic2010[nrow(high_basic2010),i],(mean_basic2010[nrow(mean_basic2010),i]-elec[2,i]))
-}
 
-pred2010
+pred22010 = matrix(NA, ncol=5, nrow=8)
+row.names(pred22010) = colnames(y)[1:8]
+colnames(pred22010) = c("Elec_res","MAP","Low","High","Diff")
+elec2 = elec[,colnames(y)[1:8]]
+for(i in 1:ncol(y)){
+  pred22010[i,] =  cbind(elec2[2,i],mean_basic2010[nrow(mean_basic2010),i],low_basic2010[nrow(low_basic2010),i],high_basic2010[nrow(high_basic2010),i],(mean_basic2010[nrow(mean_basic2010),i]-elec2[2,i]))
+}
+pred22010
+
+head(mean_basic2010)
+head(elec2)
+
+mse_elec2010 = matrix(NA, ncol=1, nrow=8)
+row.names(mse_elec2010) = row.names(pred22010)
+for(i in 1:8){
+  mse_elec2010[i,]  = sum((mean_basic2010[,i]-elec2[2,i])^2)/nrow(mean_basic2010)
+}
+mse_elec2010
 
 
 ####################################################
-############ PREDICT 2010 ELECTION #################
+############ PREDICT 2014 ELECTION #################
 ####################################################
 
 polls = repmis::source_data(data_url, sep = ",", header = TRUE)
@@ -368,9 +410,9 @@ y$n = polls$n[-no_n]
 y[,1:9] = y[,1:9]/100
 df = na.omit(y[,-9])
 
-elec = data.frame(rbind(c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0.00000001),
-                        c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
-                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057))) #c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286))
+elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
+                        c(0.3050,0.0716,0.0568,0.0656,0.311,0.0745,0.069,0.0578),
+                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))) 
 
 colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
 row.names(elec) = c("2006","2010","2014") #"2002",
@@ -408,36 +450,52 @@ system.time(jags_all2014<- jags.model("jags_dlm.bug", data = all_data2014, n.cha
 
 ninter=10000
 
-system.time(all_out2014 <- coda.samples(jags_all2014,variable.names = c("x", "phi"), n.iter = ninter, thin = 5))
+system.time(all_out2014 <- coda.samples(jags_all2014,variable.names = c("x", "eps"), n.iter = ninter, thin = 5))
 sum_all2014 = summary(all_out2014)
+
 out_x2014 = all_out2014[,which(regexpr("x", row.names(sum_all2014$statistics))==1)]
 sum_x2014 = sum_all2014$statistics[which(regexpr("x", row.names(sum_all2014$statistics))==1),]
-out_phi2014 = all_out2014[,which(regexpr("phi", row.names(sum_all2014$statistics))==1)]
+out_phi2014 = all_out2014[,which(regexpr("eps", row.names(sum_all2014$statistics))==1)]
 par(mfrow=c(3,3))
 for(i in 1: ncol(out_phi2014[[1]])){plot(out_phi2014[,i])}
 par(mfrow=c(1,1))  
 
-mean_basic2014 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
+nperiods=as.numeric(end.date-orig.date)
+nsim = dim(all_out2014[[1]])[1]*3
+mean_basic2014 = matrix(NA, ncol=ncol(y), nrow=nperiods)
 ind.start = 1
-ind.end = as.numeric(end.date-orig.date)
-high_basic2014 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
-low_basic2014 = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date))
-states_basic2014 = list()
+ind.end = nperiods
+high_basic2014 = high_basic22 = matrix(NA, ncol=ncol(y), nrow=nperiods)
+low_basic2014 = low_basic22 = matrix(NA, ncol=ncol(y), nrow=nperiods)
+percentile5 = round(nsim*0.05)
+percentile95 = round(nsim*0.95)
+states_basic2 = list()
 for(i in 1:ncol(y)){
-  ind.start[i+1] = i*as.numeric(end.date-orig.date)+1
-  ind.end[i+1] =  ind.start[i+1]+as.numeric(end.date-orig.date)-1
-  mean_basic2014[,i] = sum_x2014[ind.start[i]:ind.end[i],1]
-  low_basic2014[,i] = mean_basic2014[,i] - 1.96 * sum_x2014[ind.start[i]:ind.end[i],2]
-  high_basic2014[,i] = mean_basic2014[,i] + 1.96 * sum_x2014[ind.start[i]:ind.end[i],2]
-  states_basic2014[[i]] = out_x2014[,ind.start[i]:ind.end[i]]
+  ind.start[i+1] = i*nperiods+1
+  ind.end[i+1] =  ind.start[i+1]+nperiods-1
+  mean_basic2014[,i] = apply(rbind(out_x2014[[1]][,ind.start[i]:ind.end[i]],out_x2014[[2]][,ind.start[i]:ind.end[i]],out_x2014[[3]][,ind.start[i]:ind.end[i]]),2,mean)
+  low_basic2014[,i] = apply(rbind(out_x2014[[1]][,ind.start[i]:ind.end[i]],out_x2014[[2]][,ind.start[i]:ind.end[i]],out_x2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
+  high_basic2014[,i] = apply(rbind(out_x2014[[1]][,ind.start[i]:ind.end[i]],out_x2014[[2]][,ind.start[i]:ind.end[i]],out_x2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
-pred2014 = matrix(NA, ncol=5, nrow=8)
-row.names(pred2014) = c("M","L","KD","C","S","MP","V","SD")
-colnames(pred2014) = c("Elec_res","MAP","Low","High","Diff")
-for(i in 1:ncol(y)){
-  pred2014[i,] =  cbind(elec[2,i],mean_basic2014[nrow(mean_basic2014),i],low_basic2014[nrow(low_basic2014),i],high_basic2014[nrow(high_basic2014),i],(mean_basic2014[nrow(mean_basic2014),i]-elec[2,i]))
-}
 
-pred2014
+pred22014 = matrix(NA, ncol=5, nrow=8)
+row.names(pred22014) = colnames(y)[1:8]
+colnames(pred22014) = c("Elec_res","MAP","Low","High","Diff")
+elec2 = elec[,colnames(y)[1:8]]
+for(i in 1:ncol(y)){
+  pred22014[i,] =  cbind(elec2[2,i],mean_basic2014[nrow(mean_basic2014),i],low_basic2014[nrow(low_basic2014),i],high_basic2014[nrow(high_basic2014),i],(mean_basic2014[nrow(mean_basic2014),i]-elec2[2,i]))
+}
+pred22014
+
+head(mean_basic2014)
+head(elec2)
+
+mse_elec2014 = matrix(NA, ncol=1, nrow=8)
+row.names(mse_elec2014) = row.names(pred22014)
+for(i in 1:8){
+  mse_elec2014[i,]  = sum((mean_basic2014[,i]-elec2[2,i])^2)/nrow(mean_basic2014)
+}
+mse_elec2014
+
 

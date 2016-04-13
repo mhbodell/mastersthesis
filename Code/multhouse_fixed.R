@@ -325,8 +325,8 @@ y[,1:9] = y[,1:9]/100
 df = na.omit(y[,-9])
 
 elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
-                        c(0.3006,0.0706,0.056,0.0656,0.3066,0.0734,0.056,0.057),
-                        c(0.2333, 0.0542, 0.0457, 0.0611, 0.3101, 0.0689, 0.0572, 0.1286)))
+                        c(0.3050,0.0716,0.0568,0.0656,0.311,0.0745,0.069,0.0578),
+                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))
 colnames(elec) = partynames
 row.names(elec) = c("2006","2010","2014") #"2002",
 elec$Date = c( as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #as.Date("2002-09-12"),
@@ -591,7 +591,7 @@ add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics
 
 
 nperiods=max(df2[,'Date'])
-nsim = dim(add_out[[1]])[1]*3
+nsim = dim(add_out2014t[[1]])[1]*3
 mean_add2014 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
@@ -604,9 +604,9 @@ colnames(mean_add2014) = colnames(low_add2014) =colnames(high_add2014) = partyna
 for(i in 1:ncol(y2)){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
-  mean_add2014[,i] = apply(rbind(addout_x2014[[1]][,ind.start[i]:ind.end[i]],addout_x2014[[2]][,ind.start[i]:ind.end[i]],addout_x2014[[3]][,ind.start[i]:ind.end[i]]),2,mean)
-  low_add2014[,i] = apply(rbind(addout_x2014[[1]][,ind.start[i]:ind.end[i]],addout_x2014[[2]][,ind.start[i]:ind.end[i]],addout_x2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
-  high_add2014[,i] = apply(rbind(addout_x2014[[1]][,ind.start[i]:ind.end[i]],addout_x2014[[2]][,ind.start[i]:ind.end[i]],addout_x2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
+  mean_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2,mean)
+  low_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
+  high_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
 pred22014 = matrix(NA, ncol=5, nrow=8)

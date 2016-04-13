@@ -35,98 +35,64 @@ df = rbind(df, df2)
 df = df[order(df$startDate),]
 orig.date = as.Date(df$startDate[1]-1)
 end.date = df$endDate[length(df$endDate)]
+dayssinceorigStart = julian(df$startDate, origin=orig.date) 
+dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
+df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
+head(df)
 
-dateDiff = df[,'endDate'] - df[,'startDate']
-dateDiff2 = dateDiff+1
-nDay = df$n/as.numeric(dateDiff2)
-
-pSmooth = matrix(NA, ncol=length(partynames), nrow=sum(dateDiff2))
-colnames(pSmooth) = partynames
-j = 1
-for(i in partynames){
-  pSmooth[,j] = rep(df[,i],dateDiff2)
-  j= j+1
-}
-
-nSmooth = rep(nDay,dateDiff2)
-houseSmooth = rep(df$house, dateDiff2)
-
-ee = list()
-for(i in 1:nrow(df)){
-  ee[[i]] = seq(df[i,'startDate'], df[i,'endDate'], by="days")
-}
-
-dateSmooth = ee[[1]]
-for(i in 2:nrow(df)){
-  dateSmooth = c(dateSmooth, ee[[i]])
-}
-
-dateSmooth.num = julian(dateSmooth,origin=orig.date)
-df2 = data.frame(M = pSmooth[,'M'],L = pSmooth[,'L'], KD= pSmooth[,'KD'], C = pSmooth[,'C'],
-                 S = pSmooth[,'S'], V = pSmooth[,'V'], MP =  pSmooth[,'MP'], SD = pSmooth[,'SD'],
-                 Date = dateSmooth.num, n = nSmooth, house = houseSmooth)
-head(df2)
-prec2 = matrix(NA,ncol=8, nrow=nrow(df2))
-colnames(prec2) = colnames(df2)[1:8]
+prec=matrix(NA,ncol=8, nrow=nrow(df))
+colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df2)){
-    prec2[j,i] = ifelse(is.na(df2[j,i]), NA ,(1 / (df2[j,i]*(1-df2[j,i])/df2[i,'n'])))
+  for(j in 1:nrow(df)){
+    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
   }
 }
-head(prec2)
+
+
 
 jags_addhouse ='
 model{
 #measurement model
 for(j in 1:nparties){
-  for(i in 1:npolls){
-    y[i,j] ~ dnorm(x[day[i],j]+house[org[i],j], prec[i,j])
-  }
+for(i in 1:npolls){
+y[i,j] ~ dnorm(x[day[i],j], prec[i,j]*(1/house[org[i],j]))
+}
 }
 #dynamic model
 for(j in 1:nparties){
-  for(i in 2:nperiods){
-    x[i,j] ~ dnorm(x[i-1,j],phi[j])
-  }
+for(i in 2:nperiods){
+x[i,j] ~ dnorm(x[i-1,j],phi[j])
+}
 }
 ## priors
 for(i in 1:nparties){
-  init.m[i] ~ dunif(0,1) 
-  init.v[i] ~ dgamma(0.01,0.01)
-  x[1,i] ~ dnorm(init.m[i], init.v[i])
-  eps[i] ~ dgamma(1,1)
-  phi[i] <- 1/eps[i]
-  house[12,i] <- 0
+init.m[i] ~ dunif(0,1) 
+init.v[i] ~ dgamma(0.01,0.01)
+x[1,i] ~ dnorm(init.m[i], init.v[i])
+eps[i] ~ dgamma(1,10)
+phi[i] <- 1/eps[i]
+house[12,i] <- 1
+for(j in 1:(nhouses-1)) { 
+house[j, i] ~ dgamma(1, 1)
+}
 }
 
-for (i in 2:nparties) { # for each party - house effects across houses sum to zero
-  house[1, i] <- -sum(house[2:nhouses, i] )
-}
 
-for(i in 1:(nhouses-1)) { # for each house - house effects across the parties sum to zero
-  house[i, 1] <- -sum(house[i, 2:nparties] )
-}
-
-for (i in 2:nparties) { 
-  for(j in 2:(nhouses-1)) { 
-    house[j, i] ~ dnorm(0, 0.01)
-  }
-}
 }
 '
 
-y2 = as.matrix(df2[,1:8])
-colnames(y2) = colnames(df2[,1:8])
-df2$house = factor(df2$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
-                           "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
-data_addhouse = list(y = y2, prec = prec2, x = matrix(NA, ncol=ncol(y2), nrow=max(df2$Date)),
-                     nparties = ncol(y2), day = df2$Date, npolls = nrow(df2), nperiods = max(df2$Date),
-                     nhouses = length(levels(as.factor(df2$house))), org=as.numeric(df2$house),
-                     house = matrix(NA,nrow=length(levels(as.factor(df2$house))), ncol=ncol(y2)))
+y2 = as.matrix(df[,1:8])
+colnames(y2) = colnames(df[,1:8])
+df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
+                                       "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
+data_addhouse = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max(df$Date)),
+                     nparties = ncol(y2), day = df$Date, npolls = nrow(df), nperiods = max(df$Date),
+                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
+                     house = matrix(NA,nrow=length(levels(as.factor(df$house))), ncol=ncol(y2)))
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 system.time(jags_addhouse <- jags.model("jags_addhouse.bug", data = data_addhouse, n.chain=3))
-ninter=10000
-system.time(add_out <- coda.samples(jags_addhouse,variable.names = c("x", "eps", "house"), n.iter = ninter, thin = 5))
+ninter=40000
+system.time(add_out <- coda.samples(jags_addhouse,variable.names = c("x", "eps", "house"), n.iter = ninter, thin = 20, burnin=5000))
 system.time(sum_add <- summary(add_out))
 
 addout_x = add_out[,which(regexpr("x", row.names(sum_add$statistics))==1)]
@@ -136,17 +102,17 @@ for(i in 1: ncol(addout_phi[[1]])){plot(addout_phi[,i], main=colnames(y2)[i])}
 par(mfrow=c(1,1)) 
 
 addhouse = add_out[,which(regexpr("house", row.names(sum_add$statistics))==1)]
-map_house = matrix(NA, nrow=length(levels(as.factor(df2$house))), ncol=ncol(y2))
+map_house = matrix(NA, nrow=length(levels(as.factor(df$house))), ncol=ncol(y2))
 j=1
 for(i in seq(1,dim(addhouse[[1]])[2],12)){
   map_house[,j] = apply(as.matrix(addhouse[,seq(i,i+11,1)]),2,mean)
   j = j+1
 }
-row.names(map_house) = levels(as.factor(df2$house))
+row.names(map_house) = levels(as.factor(df$house))
 colnames(map_house) = colnames(y2)
 map_house 
 
-nperiods=max(df2[,'Date'])
+nperiods=max(df[,'Date'])
 nsim = dim(add_out[[1]])[1]*3
 mean_add = matrix(NA, ncol=ncol(y2), nrow=nperiods)
 ind.start = 1
@@ -167,7 +133,7 @@ for(i in 1:ncol(y2)){
   states_add[[i]] = rbind(addout_x[[1]][,ind.start[i]:ind.end[i]],addout_x[[2]][,ind.start[i]:ind.end[i]],addout_x[[3]][,ind.start[i]:ind.end[i]])
 }
 
-
+colnames(mean_add) = colnames(y2)
 ##################################################################
 ############# POSTERIOR PREDICTIVE CHECKING ######################
 ##################################################################
@@ -197,8 +163,8 @@ for(i in 1:8){
   }
 }
 
-he = matrix(NA, ncol=ncol(prec2),nrow=nrow(df))
-for(k in 1:ncol(prec2)){
+he = matrix(NA, ncol=ncol(prec),nrow=nrow(df))
+for(k in 1:ncol(prec)){
   for(i in 1:length(row.names(map_house))){
     ins = row.names(map_house)[i]
     for(j in 1:nrow(df)){
@@ -216,14 +182,14 @@ yrepM = yrepL = yrepKD = yrepC = yrepS = yrepMP = yrepV = yrepSD = matrix(NA, nr
 
 for(i in 1:dim(rChain[[1]])[1]){
   for(j in 1:nrow(df3)){
-    yrepM[i,j] = rnorm(1, rChain[['M']][i,df3$Date[j]]+he[j,'M'], prec[j,'M'])
-    yrepL[i,j] = rnorm(1, rChain[['L']][i,df3$Date[j]]+he[j,'L'], prec[j,'L'])
-    yrepKD[i,j] = rnorm(1, rChain[['KD']][i,df3$Date[j]]+he[j,'KD'], prec[j,'KD'])
-    yrepC[i,j] = rnorm(1, rChain[['C']][i,df3$Date[j]]+he[j,'C'], prec[j,'C'])
-    yrepS[i,j] = rnorm(1, rChain[['S']][i,df3$Date[j]]+he[j,'S'], prec[j,'S'])
-    yrepMP[i,j] = rnorm(1, rChain[['MP']][i,df3$Date[j]]+he[j,'MP'], prec[j,'MP'])
-    yrepV[i,j] = rnorm(1, rChain[['V']][i,df3$Date[j]]+he[j,'V'], prec[j,'V'])
-    yrepSD[i,j] = rnorm(1, rChain[['SD']][i,df3$Date[j]]+he[j,'SD'], prec[j,'SD'])
+    yrepM[i,j] = rnorm(1, rChain[['M']][i,df3$Date[j]], prec[j,'M']*(he[j,'M']))
+    yrepL[i,j] = rnorm(1, rChain[['L']][i,df3$Date[j]], prec[j,'L']*(he[j,'L']))
+    yrepKD[i,j] = rnorm(1, rChain[['KD']][i,df3$Date[j]], prec[j,'KD']*(he[j,'KD']))
+    yrepC[i,j] = rnorm(1, rChain[['C']][i,df3$Date[j]], prec[j,'C']*(he[j,'C']))
+    yrepS[i,j] = rnorm(1, rChain[['S']][i,df3$Date[j]], prec[j,'S']*(he[j,'S']))
+    yrepMP[i,j] = rnorm(1, rChain[['MP']][i,df3$Date[j]], prec[j,'MP']*(he[j,'MP']))
+    yrepV[i,j] = rnorm(1, rChain[['V']][i,df3$Date[j]], prec[j,'V']*(he[j,'V']))
+    yrepSD[i,j] = rnorm(1, rChain[['SD']][i,df3$Date[j]], prec[j,'SD']*(he[j,'SD']))
   }
 }
 
@@ -232,10 +198,10 @@ bayespval = matrix(NA,nrow=8, ncol=6)
 rownames(bayespval) = partynames
 colnames(bayespval) = c("Min","Max","Mean","Var","Neg.val","Above1")
 for(i in partynames){
-  bayespval[i,1] = sum(ifelse(apply(yreps[[i]],1,min)>min(df3[,i]),1,0))/nsim
-  bayespval[i,2] = sum(ifelse(apply(yreps[[i]],1,max)>max(df3[,i]),1,0))/nsim
-  bayespval[i,3] = sum(ifelse(apply(yreps[[i]],1,mean)>mean(df3[,i]),1,0))/nsim
-  bayespval[i,4] = sum(ifelse(apply(yreps[[i]],1,var)>var(df3[,i]),1,0))/nsim
+  bayespval[i,1] = sum(ifelse(apply(yreps[[i]],1,min)>=min(df3[,i]),1,0))/nsim
+  bayespval[i,2] = sum(ifelse(apply(yreps[[i]],1,max)>=max(df3[,i]),1,0))/nsim
+  bayespval[i,3] = sum(ifelse(apply(yreps[[i]],1,mean)>=mean(df3[,i]),1,0))/nsim
+  bayespval[i,4] = sum(ifelse(apply(yreps[[i]],1,var)>=var(df3[,i]),1,0))/nsim
   bayespval[i,5] = sum(ifelse(yreps[[i]]<0,1,0))/(dim(yreps[[i]])[1]*dim(yreps[[i]])[2])
   bayespval[i,6] = sum(ifelse(yreps[[i]]>1,1,0))/(dim(yreps[[i]])[1]*dim(yreps[[i]])[2])
 }
@@ -249,36 +215,32 @@ for(i in partynames){
   dat_high2[,i] = apply(yreps[[i]],2,function(x) sort(x)[percentile95])
 }
 
-colnames(dat_high2) = colnames(dat_low2) = partynames
-dat_high2 = dat_high2[,colnames(y2)]
-dat_low2 = dat_low2[,colnames(y2)]
-bandsL = rep(dat_low2[,1], dateDiff2)
-bandsH = rep(dat_low2[,1], dateDiff2)
+dat_high2 = dat_high2[,colnames(y)]
+dat_low2 = dat_low2[,colnames(y)]
+
 #################################################
 ################# PLOTS #########################
 #################################################
 
 basic_plot2 = list()
 
-head(y2)
+head(y)
+colnamas(mean_add) = colnames()
 df3$house = df$house
-cols = c("blue","lightblue3","darkblue","chartreuse3","red","darkred","forestgreen","skyblue3")
+cols = c("blue","lightblue3","darkblue","chartreuse3","red","forestgreen","darkred","skyblue3")
 library(ggplot2)
 for(i in 1:ncol(mean_add)){
   
   plot_df = data.frame(party = mean_add[,i] ,  low=low_add[,i]*100, high=high_add[,i]*100,
-                       time=seq(orig.date,by='days', length=as.numeric(end.date-orig.date)), party2 = rep(colnames(y2)[i], as.numeric(end.date-orig.date)),
-                       high2=bandsH*100, low2=bandsL*100)
-  points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df3$Date], 
-                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date])) )
-  databand = data.frame(high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100)
+                       time=seq(orig.date,by='days', length=nperiods), party2 = rep(colnames(y2)[i], nperiods))
+  points = data.frame(x=seq(orig.date,by='days',length=nperiods)[df3$Date], 
+                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date]))
+                      ,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
   basic_plot2[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
-    geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, fill=cols[i]) + 
-    #geom_line(data=points, aes(x=x, y=high_dat),col=cols[i], alpha=1)  +
-    #geom_line(data=points, aes(x=x, y=low_dat),col=cols[i], alpha=1)  +
-    #geom_arean(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
+    geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill=cols[i]) + 
+    #geom_ribbon(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
     geom_point(data=points, aes(x=x, y=y), alpha = 1, color=cols[i], shape=16, size=1) +    
     labs(x="Date", y=paste("Support for", sep=" ", unique(plot_df$party2), paste("(%)", sep=" "), collapse="")) +
     theme_bw() +
@@ -320,6 +282,10 @@ multiplot(basic_plot2[[1]], basic_plot2[[2]], basic_plot2[[3]], basic_plot2[[4]]
 ####################################################
 ############ PREDICT 2010 ELECTION #################
 ####################################################
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
+colnames(polls)[4] = 'L'
 
 O = NULL
 for(i in 1:nrow(polls)){
@@ -359,52 +325,21 @@ df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
 df = df[-which(df$endDate>=end.date),]
 tail(df)
 
-
-dateDiff = df[,'endDate'] - df[,'startDate']
-dateDiff2 = dateDiff+1
-nDay = df$n/as.numeric(dateDiff2)
-
-pSmooth = matrix(NA, ncol=length(partynames), nrow=sum(dateDiff2))
-colnames(pSmooth) = partynames
-j = 1
-for(i in partynames){
-  pSmooth[,j] = rep(df[,i],dateDiff2)
-  j= j+1
-}
-
-nSmooth = rep(nDay,dateDiff2)
-houseSmooth = rep(df$house, dateDiff2)
-
-ee = list()
-for(i in 1:nrow(df)){
-  ee[[i]] = seq(df[i,'startDate'], df[i,'endDate'], by="days")
-}
-
-dateSmooth = ee[[1]]
-for(i in 2:nrow(df)){
-  dateSmooth = c(dateSmooth, ee[[i]])
-}
-
-dateSmooth.num = julian(dateSmooth,origin=orig.date)
-df2 = data.frame(M = pSmooth[,'M'],L = pSmooth[,'L'], KD= pSmooth[,'KD'], C = pSmooth[,'C'],
-                 S = pSmooth[,'S'], V = pSmooth[,'V'], MP =  pSmooth[,'MP'], SD = pSmooth[,'SD'],
-                 Date = dateSmooth.num, n = nSmooth, house = houseSmooth)
-
-
-prec2 = matrix(NA,ncol=8, nrow=nrow(df2))
-colnames(prec2) = colnames(df2)[1:8]
+prec=matrix(NA,ncol=8, nrow=nrow(df))
+colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df2)){
-    prec2[j,i] = ifelse(is.na(df2[j,i]), NA ,(1 / (df2[j,i]*(1-df2[j,i])/df2[i,'n'])))
+  for(j in 1:nrow(df)){
+    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
   }
 }
+
 
 jags_addhouse ='
 model{
 #measurement model
 for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[org[i],j], prec[i,j])
+y[i,j] ~ dnorm(x[day[i],j], prec[i,j]*(1/house[org[i],j]))
 }
 }
 #dynamic model
@@ -418,47 +353,33 @@ for(i in 1:nparties){
 init.m[i] ~ dunif(0,1) 
 init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
-eps[i] ~ dgamma(1,1)
+eps[i] ~ dgamma(1,10)
 phi[i] <- 1/eps[i]
-house[12,i] <- 0
+house[12,i] <- 1
+for(j in 1:(nhouses-1)) { 
+house[j, i] ~ dgamma(1, 1)
+}
 }
 
-for (i in 2:nparties) { # for each party - house effects across houses sum to zero
-house[1, i] <- -sum(house[2:nhouses, i] )
-}
 
-for(i in 1:(nhouses-1)) { # for each house - house effects across the parties sum to zero
-house[i, 1] <- -sum(house[i, 2:nparties] )
-}
-
-for (i in 2:nparties) { 
-for(j in 2:(nhouses-1)) { 
-house[j, i] ~ dnorm(0, 0.01)
-}
-}
 }
 '
-y2 = as.matrix(df2[,1:8])
-df2$house = factor(df2$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
+y2 = as.matrix(df[,1:8])
+df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                        "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
-
-all_data22010 = list(y = y2, prec = prec2, x = matrix(NA, ncol=ncol(y2), nrow=max(df2$Date)),
-                     nparties = ncol(y2), day = df2$Date, npolls = nrow(df2), nperiods = max(df2$Date),
-                     nhouses = length(levels(as.factor(df2$house))), org=as.numeric(df2$house),
-                     house = matrix(NA,nrow=length(levels(as.factor(df2$house))), ncol=ncol(y2)))
+all_data22010 = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max(df$Date)),
+                     nparties = ncol(y2), day = df$Date, npolls = nrow(df), nperiods = max(df$Date),
+                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
+                     house = matrix(NA,nrow=length(levels(as.factor(df$house))), ncol=ncol(y2)))
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 system.time(jags_addhouse2010 <- jags.model("jags_addhouse.bug", data = all_data22010, n.chain=3))
-ninter=10000
 
-system.time(all_out22010 <- coda.samples(jags_addhouse2010,variable.names = c("x", "eps"), n.iter = ninter, thin = 5))
+ninter=40000
+system.time(all_out22010 <- coda.samples(jags_addhouse2010,variable.names = c("x"), n.iter = ninter, thin = 20, burnin=5000))
 sum_all22010 = summary(all_out22010)
 add_out2010 = all_out22010[,which(regexpr("x", row.names(sum_all22010$statistics))==1)]
-out_phi22010 = all_out22010[,which(regexpr("eps", row.names(sum_all22010$statistics))==1)]
-par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi22010[[1]])){plot(out_phi22010[,i])}
-par(mfrow=c(1,1))  
 
-nperiods=max(df2[,'Date'])
+nperiods=max(df[,'Date'])
 nsim = dim(add_out2010[[1]])[1]*3
 mean_add2010 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
 ind.start = 1
@@ -478,17 +399,15 @@ for(i in 1:ncol(y2)){
 }
 
 
+
 pred22010 = matrix(NA, ncol=5, nrow=8)
-row.names(pred22010) = colnames(mean_add2010)[1:8]
+row.names(pred22010) = colnames(df)[1:8]
 colnames(pred22010) = c("Elec_res","MAP","Low","High","Diff")
-elec2 = elec[,colnames(mean_add2010)[1:8]]
+elec2 = elec[,colnames(df)[1:8]]
 for(i in 1:ncol(y2)){
   pred22010[i,] =  cbind(elec2[2,i],mean_add2010[nrow(mean_add2010),i],low_add2010[nrow(low_add2010),i],high_add2010[nrow(high_add2010),i],(mean_add2010[nrow(mean_add2010),i]-elec2[2,i]))
 }
 pred22010
-
-head(mean_add2010)
-head(elec2)
 
 mse_elec2010 = matrix(NA, ncol=1, nrow=8)
 row.names(mse_elec2010) = row.names(pred22010)
@@ -537,50 +456,22 @@ df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
 df = df[-which(df$endDate>=end.date),]
 tail(df)
 
-dateDiff = df[,'endDate'] - df[,'startDate']
-dateDiff2 = dateDiff+1
-nDay = df$n/as.numeric(dateDiff2)
 
-pSmooth = matrix(NA, ncol=length(partynames), nrow=sum(dateDiff2))
-colnames(pSmooth) = partynames
-j = 1
-for(i in partynames){
-  pSmooth[,j] = rep(df[,i],dateDiff2)
-  j= j+1
-}
-
-nSmooth = rep(nDay,dateDiff2)
-houseSmooth = rep(df$house, dateDiff2)
-
-ee = list()
-for(i in 1:nrow(df)){
-  ee[[i]] = seq(df[i,'startDate'], df[i,'endDate'], by="days")
-}
-
-dateSmooth = ee[[1]]
-for(i in 2:nrow(df)){
-  dateSmooth = c(dateSmooth, ee[[i]])
-}
-
-dateSmooth.num = julian(dateSmooth,origin=orig.date)
-df2 = data.frame(M = pSmooth[,'M'],L = pSmooth[,'L'], KD= pSmooth[,'KD'], C = pSmooth[,'C'],
-                 S = pSmooth[,'S'], V = pSmooth[,'V'], MP =  pSmooth[,'MP'], SD = pSmooth[,'SD'],
-                 Date = dateSmooth.num, n = nSmooth, house = houseSmooth)
-
-prec2 = matrix(NA,ncol=8, nrow=nrow(df2))
-colnames(prec2) = colnames(df2)[1:8]
+prec=matrix(NA,ncol=8, nrow=nrow(df))
+colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df2)){
-    prec2[j,i] = ifelse(is.na(df2[j,i]), NA ,(1 / (df2[j,i]*(1-df2[j,i])/df2[i,'n'])))
+  for(j in 1:nrow(df)){
+    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
   }
 }
+
 
 jags_addhouse ='
 model{
 #measurement model
 for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[org[i],j], prec[i,j])
+y[i,j] ~ dnorm(x[day[i],j], prec[i,j]*(1/house[org[i],j]))
 }
 }
 #dynamic model
@@ -594,48 +485,35 @@ for(i in 1:nparties){
 init.m[i] ~ dunif(0,1) 
 init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i], init.v[i])
-eps[i] ~ dgamma(1,1)
+eps[i] ~ dgamma(1,10)
 phi[i] <- 1/eps[i]
-house[12,i] <- 0
+house[12,i] <- 1
+for(j in 1:(nhouses-1)) { 
+house[j, i] ~ dgamma(1, 1)
+}
 }
 
-for (i in 2:nparties) { # for each party - house effects across houses sum to zero
-house[1, i] <- -sum(house[2:nhouses, i] )
-}
 
-for(i in 1:(nhouses-1)) { # for each house - house effects across the parties sum to zero
-house[i, 1] <- -sum(house[i, 2:nparties] )
-}
-
-for (i in 2:nparties) { 
-for(j in 2:(nhouses-1)) { 
-house[j, i] ~ dnorm(0, 0.01)
-}
-}
 }
 '
 
-y2 = as.matrix(df2[,1:8])
-df2$house = factor(df2$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
+y2 = as.matrix(df[,1:8])
+df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                        "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
-
-all_data22014 = list(y = y2, prec = prec2, x = matrix(NA, ncol=ncol(y2), nrow=max(df2$Date)),
-                     nparties = ncol(y2), day = df2$Date, npolls = nrow(df2), nperiods = max(df2$Date),
-                     nhouses = length(levels(as.factor(df2$house))), org=as.numeric(df2$house),
-                     house = matrix(NA,nrow=length(levels(as.factor(df2$house))), ncol=ncol(y2)))
+all_data22014 = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max(df$Date)),
+                     nparties = ncol(y2), day = df$Date, npolls = nrow(df), nperiods = max(df$Date),
+                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
+                     house = matrix(NA,nrow=length(levels(as.factor(df$house))), ncol=ncol(y2)))
 writeLines(jags_addhouse,con="jags_addhouse.bug")
-
 system.time(jags_all22014<- jags.model("jags_addhouse.bug", data = all_data22014, n.chain=3))
-system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x", "eps"), n.iter = ninter, thin = 5))
+
+system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x"), n.iter = ninter, thin = 20, burnin=5000))
 sum_all22014 = summary(all_out22014)
 add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
-out_phi22014 = all_out22014[,which(regexpr("eps", row.names(sum_all22014$statistics))==1)]
-par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi22014[[1]])){plot(out_phi22014[,i])}
-par(mfrow=c(1,1))  
 
-nperiods=max(df2[,'Date'])
-nsim = dim(add_out[[1]])[1]*3
+
+nperiods=max(df[,'Date'])
+nsim = dim(add_out2014[[1]])[1]*3
 mean_add2014 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
@@ -654,9 +532,9 @@ for(i in 1:ncol(y2)){
 }
 
 pred22014 = matrix(NA, ncol=5, nrow=8)
-row.names(pred22014) = colnames(df2)[1:8]
+row.names(pred22014) = colnames(df)[1:8]
 colnames(pred22014) = c("Elec_res","MAP","Low","High","Diff")
-elec2 = elec[,colnames(df2)[1:8]]
+elec2 = elec[,colnames(df)[1:8]]
 for(i in 1:ncol(y2)){
   pred22014[i,] =  cbind(elec2[3,i],mean_add2014[nrow(mean_add2014),i],low_add2014[nrow(low_add2014),i],high_add2014[nrow(high_add2014),i],(mean_add2014[nrow(mean_add2014),i]-elec2[3,i]))
 }
@@ -668,3 +546,5 @@ for(i in 1:8){
   mse_elec2014[i,]  = sum((mean_add2014[,i]-elec2[3,i])^2)/nrow(mean_add2014)
 }
 mse_elec2014
+
+
