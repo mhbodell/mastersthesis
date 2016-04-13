@@ -92,10 +92,10 @@ house[j, i] ~ dnorm(0, 0.01)
 '
 
 writeLines(multi_diri, con="DM-model")
-system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=100, n.chain=3))
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=100000, n.chain=3))
 #update(jags_DM,1000)
-ninter = 1000
-system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 20, burnin=10))
+ninter = 20000
+system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 10, burnin=5000))
 system.time(sumDM <-  summary(outDM))
 addout_x= outDM[,which(regexpr("x",row.names(sumDM$statistics))==1),]
 
@@ -110,7 +110,6 @@ row.names(map_house) = levels(as.factor(df$house))
 colnames(map_house) = colnames(y[1,8])
 map_house 
 
-str(addout_x[[1]])
 
 nperiods=max(df[,'Date'])
 nsim = dim(outDM[[1]])[1]*3
@@ -131,10 +130,7 @@ for(i in 1:8){
   states_add[[i]] = rbind(addout_x[[1]][,ind.start[i]:ind.end[i]],addout_x[[2]][,ind.start[i]:ind.end[i]],addout_x[[3]][,ind.start[i]:ind.end[i]])
 }
 
-apply(rbind(addout_x[[1]][,ind.start[i]:ind.end[i]],addout_x[[2]][,ind.start[i]:ind.end[i]],addout_x[[3]][,ind.start[i]:ind.end[i]]),2,mean)
-plot(mean_add[,6])
-plot(y[,3])
-mean_add[,6]
+
 
 ##################################################################
 ############# POSTERIOR PREDICTIVE CHECKING ######################
@@ -205,53 +201,29 @@ for(i in 1:dim(rChain[[1]])[1]){
 bp = cbind(apply(bpmin,2,sum)/nrow(bpmin),apply(bpmax,2,sum)/nrow(bpmax),apply(bpmean,2,sum)/nrow(bpmean),apply(bpvar,2,sum)/nrow(bpvar))
 row.names(bp) = partynames
 colnames(bp ) =c("min","max","mean","var")
-for(i in 1:8)
-
-
-yreps = list(M=yrepM,L=yrepL,KD=yrepKD,C=yrepC,S=yrepS,MP=yrepMP,V=yrepV,SD=yrepSD)
-bayespval = matrix(NA,nrow=8, ncol=6)
-rownames(bayespval) = partynames
-colnames(bayespval) = c("Min","Max","Mean","Var","Neg.val","Above1")
-for(i in partynames){
-  bayespval[i,1] = sum(ifelse(apply(yreps[[i]],1,min)>min(df3[,i]),1,0))/nsim
-  bayespval[i,2] = sum(ifelse(apply(yreps[[i]],1,max)>max(df3[,i]),1,0))/nsim
-  bayespval[i,3] = sum(ifelse(apply(yreps[[i]],1,mean)>mean(df3[,i]),1,0))/nsim
-  bayespval[i,4] = sum(ifelse(apply(yreps[[i]],1,var)>var(df3[,i]),1,0))/nsim
-  bayespval[i,5] = sum(ifelse(yreps[[i]]<0,1,0))/(dim(yreps[[i]])[1]*dim(yreps[[i]])[2])
-  bayespval[i,6] = sum(ifelse(yreps[[i]]>1,1,0))/(dim(yreps[[i]])[1]*dim(yreps[[i]])[2])
-}
-bayespval
-
-dat_low2 = matrix(NA, ncol=8, nrow=nrow(df3))
-dat_high2 = matrix(NA, ncol=8, nrow=nrow(df3))
-colnames(dat_low2) = colnames(dat_high2) = partynames
-for(i in partynames){
-  dat_low2[,i] = apply(yreps[[i]],2,function(x) sort(x)[percentile5])
-  dat_high2[,i] = apply(yreps[[i]],2,function(x) sort(x)[percentile95])
+neg = ab1 = list()
+for(i in 1:8){
+  neg[[i]] = which(rChain[[i]]<0)
+  ab1[[i]] = which(rChain[[i]]<0)
 }
 
-colnames(dat_high2) = colnames(dat_low2) = partynames
-dat_high2 = dat_high2[,colnames(y2)]
-dat_low2 = dat_low2[,colnames(y2)]
-bandsL = rep(dat_low2[,1], dateDiff2)
-bandsH = rep(dat_low2[,1], dateDiff2)
+
 #################################################
 ################# PLOTS #########################
 #################################################
 
 basic_plot2 = list()
 
-head(y2)
 df3$house = df$house
-cols = c("blue","lightblue3","darkblue","chartreuse3","red","darkred","forestgreen","skyblue3")
+cols = c("blue","lightblue3","darkblue","chartreuse3","red","forestgreen","darkred","skyblue3")
 library(ggplot2)
 for(i in 1:ncol(mean_add)){
   
   plot_df = data.frame(party = mean_add[,i] ,  low=low_add[,i]*100, high=high_add[,i]*100,
-                       time=seq(orig.date,by='days', length=max(df$Date)), party2 = rep(colnames(y2)[i], max(df$Date)))
+                       time=seq(orig.date,by='days', length=max(df$Date)), party2 = rep(partynames[i], max(df$Date)))
   points = data.frame(x=seq(orig.date,by='days',length=max(df$Date))[df3$Date], 
-                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date])),
-                      high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100)
+                      y=df3[,i]*100, house=df3$house, party=partynames[i],length(df3$Date[length(df3$Date)][df3$Date]))
+                      #,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100)
   basic_plot2[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
@@ -296,25 +268,31 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 multiplot(basic_plot2[[1]], basic_plot2[[2]], basic_plot2[[3]], basic_plot2[[4]], 
           basic_plot2[[5]], basic_plot2[[6]], basic_plot2[[7]], basic_plot2[[8]], cols=2)
-
+basic_plot2[[1]]
+basic_plot2[[2]]
+basic_plot2[[3]]
+basic_plot2[[4]]
+basic_plot2[[5]]
+basic_plot2[[6]]
+basic_plot2[[7]]
+basic_plot2[[8]]
 ####################################################
 ############ PREDICT 2010 ELECTION #################
 ####################################################
 library(rjags, lib="C:/Users/mirhu86/Documents/packages")
 data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
 polls = repmis::source_data(data_url, sep = ",", header = TRUE)
-colnames(polls)[4] = 'L'
 
 O = NULL
 for(i in 1:nrow(polls)){
   O[i] = ifelse(sum(polls[i,3:10], na.rm=TRUE)==100,0, sum(polls[i,11:12], na.rm=TRUE))
 }
-partynames =  c("M","L","KD","C","S","MP","V","SD")
-y =  polls[,partynames]
+
+y =  polls[3:10]
 y$O = O
 y$startDate = as.Date(polls$collectPeriodFrom)
 y$endDate = as.Date(polls$collectPeriodTo)
-y$house = polls$house
+y$house = as.factor(polls$house)
 no_n = which(is.na(polls[,'n']))
 y = y[-no_n,]
 y$n = polls$n[-no_n]
@@ -324,55 +302,57 @@ df = na.omit(y[,-9])
 
 elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
                         c(0.3050,0.0716,0.0568,0.0656,0.311,0.0745,0.069,0.0578),
-                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))
-colnames(elec) = partynames
+                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))#c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0.00000001),
+
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
 row.names(elec) = c("2006","2010","2014") #"2002",
 elec$Date = c( as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #as.Date("2002-09-12"),
 n=c((0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000)) #(0.801*6722*1000),
 ## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+colnames(df)[2] <- "L"
 df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  MP=elec$MP,SD=elec$SD, startDate=elec$Date, endDate=elec$Date,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[1]-1
+
+orig.date = df$startDate[1]-7
 end.date = elec$Date[2]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
 df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
-df = df[-which(df$endDate>=end.date),]
-tail(df)
+head(df)
+df$Week = as.numeric(as.Date(df$startDate)-orig.date) %/% 7
+df$Week
+partynames = c("M","L","KD","C","S","MP","V","SD")
 
-prec=matrix(NA,ncol=8, nrow=nrow(df))
-colnames(prec) = colnames(df)[1:8]
-for(i in 1:8){
-  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
-  
+Y = df[,partynames] * df$n
+Y = sapply(Y, function(x) round(x,0))
+
+data = list(nperiod = max(df$Date),nhouses = length(levels(as.factor(df$house))),
+            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Date, org = as.numeric(as.factor(df$house)),
+            n = rowSums(Y), house = matrix(NA, ncol=ncol(Y), nrow=length(levels(as.factor(df$house)))))
+
+multi_diri <- '
+model {
+#observed model
+for(i in 1:npolls) { 
+y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i])
 }
 
-
-jags_addhouse ='
-model{
-#measurement model
-for(j in 1:nparties){
-for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[org[i],j], prec[i,j])
-}
-}
 #dynamic model
-for(j in 1:nparties){
-for(i in 2:nperiods){
-x[i,j] ~ dnorm(x[i-1,j],phi[j])
+for(i in 2:nperiod) {
+Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 1000
+x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
 }
+
+for (i in 1:nparties) { 
+alpha[i] ~ dunif(100, 1000) 
 }
-## priors
-for(i in 1:nparties){
-init.m[i] ~ dunif(0,1) 
-init.v[i] ~ dgamma(0.01,0.01)
-x[1,i] ~ dnorm(init.m[i], init.v[i])
-eps[i] ~ dgamma(1,1)
-phi[i] <- 1/eps[i]
-house[12,i] <- 0
+x[1, 1:nparties] ~ ddirch(alpha[])
+
+for (i in 1:nparties) { 
+house[12, i] <- 0
 }
 
 for (i in 2:nparties) { # for each party - house effects across houses sum to zero
@@ -388,40 +368,32 @@ for(j in 2:(nhouses-1)) {
 house[j, i] ~ dnorm(0, 0.01)
 }
 }
+
 }
 '
-y2 = as.matrix(df[,1:8])
-df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
-                                     "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 
-all_data22010 = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max(df$Date)),
-                     nparties = ncol(y2), day = df$Date, npolls = nrow(df), nperiods = max(df$Date),
-                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
-                     house = matrix(NA,nrow=length(levels(as.factor(df$house))), ncol=ncol(y2)))
-writeLines(jags_addhouse,con="jags_addhouse.bug")
-system.time(jags_addhouse2010 <- jags.model("jags_addhouse.bug", data = all_data22010, n.chain=3))
-ninter=40000
+writeLines(multi_diri, con="DM-model")
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=100000, n.chain=3))
+#update(jags_DM,1000)
+ninter = 20000
+system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(sumDM <-  summary(outDM))
+add_out2010 = outDM[,which(regexpr("x",row.names(sumDM$statistics))==1),]
 
-system.time(all_out22010 <- coda.samples(jags_addhouse2010,variable.names = c("x", "eps"), n.iter = ninter, thin = 20, burnin=5000))
-sum_all22010 = summary(all_out22010)
-add_out2010 = all_out22010[,which(regexpr("x", row.names(sum_all22010$statistics))==1)]
-out_phi22010 = all_out22010[,which(regexpr("eps", row.names(sum_all22010$statistics))==1)]
-par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi22010[[1]])){plot(out_phi22010[,i])}
-par(mfrow=c(1,1))  
+
 
 nperiods=max(df[,'Date'])
-nsim = dim(add_out2010[[1]])[1]*3
-mean_add2010 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
+nsim = dim(outDM[[1]])[1]*3
+mean_add2010 = matrix(NA, ncol=8, nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
-high_add2010 = high_add22010 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
-low_add2010 = low_add22010 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
+high_add2010 = high_add22010 = matrix(NA, ncol=8, nrow=nperiods)
+low_add2010 = low_add22010 = matrix(NA, ncol=8, nrow=nperiods)
 percentile5 = round(nsim*0.05)
 percentile95 = round(nsim*0.95)
 states_add2010= list()
 colnames(mean_add2010) = colnames(low_add2010) =colnames(high_add2010) = partynames
-for(i in 1:ncol(y2)){
+for(i in 1:8){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
   mean_add2010[,i] = apply(rbind(add_out2010[[1]][,ind.start[i]:ind.end[i]],add_out2010[[2]][,ind.start[i]:ind.end[i]],add_out2010[[3]][,ind.start[i]:ind.end[i]]),2,mean)
@@ -430,17 +402,16 @@ for(i in 1:ncol(y2)){
 }
 
 
+
 pred22010 = matrix(NA, ncol=5, nrow=8)
-row.names(pred22010) = colnames(mean_add2010)[1:8]
+row.names(pred22010) = partynames
 colnames(pred22010) = c("Elec_res","MAP","Low","High","Diff")
-elec2 = elec[,colnames(mean_add2010)[1:8]]
+elec2 = elec[,partynames]
 for(i in 1:ncol(y2)){
   pred22010[i,] =  cbind(elec2[2,i],mean_add2010[nrow(mean_add2010),i],low_add2010[nrow(low_add2010),i],high_add2010[nrow(high_add2010),i],(mean_add2010[nrow(mean_add2010),i]-elec2[2,i]))
 }
 pred22010
 
-head(mean_add2010)
-head(elec2)
 
 mse_elec2010 = matrix(NA, ncol=1, nrow=8)
 row.names(mse_elec2010) = row.names(pred22010)
@@ -452,72 +423,80 @@ mse_elec2010
 ####################################################
 ############ PREDICT 2014 ELECTION #################
 ####################################################
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
 
 O = NULL
 for(i in 1:nrow(polls)){
   O[i] = ifelse(sum(polls[i,3:10], na.rm=TRUE)==100,0, sum(polls[i,11:12], na.rm=TRUE))
 }
-y =  polls[,partynames]
+
+y =  polls[3:10]
 y$O = O
 y$startDate = as.Date(polls$collectPeriodFrom)
 y$endDate = as.Date(polls$collectPeriodTo)
-y$house = polls$house
+y$house = as.factor(polls$house)
 no_n = which(is.na(polls[,'n']))
 y = y[-no_n,]
 y$n = polls$n[-no_n]
 
 y[,1:9] = y[,1:9]/100
 df = na.omit(y[,-9])
+
 elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
                         c(0.3050,0.0716,0.0568,0.0656,0.311,0.0745,0.069,0.0578),
-                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))
-colnames(elec) = partynames
+                        c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))#c(0.152,0.133,0.091,0.061,0.398,0.046,0.083,0.00000001),
+
+colnames(elec) = c("M","L","KD","C","S","MP","V","SD")
 row.names(elec) = c("2006","2010","2014") #"2002",
 elec$Date = c( as.Date('2006-09-17'),as.Date('2010-09-23'),as.Date('2014-09-14')) #as.Date("2002-09-12"),
 n=c((0.82*6892*1000),(0.846*7124*1000),(0.858*7330*1000)) #(0.801*6722*1000),
 ## http://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__ME__ME0105__ME0105C/ME0105T01/table/tableViewLayout1/?rxid=36cc544d-3cba-4ced-88f6-6410c83ac9bf
+colnames(df)[2] <- "L"
 df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  MP=elec$MP,SD=elec$SD, startDate=elec$Date, endDate=elec$Date,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[1]-1
-end.date = elec$Date[3]
+
+orig.date = df$startDate[1]-7
+end.date = elec$Date[2]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
 df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
-df = df[-which(df$endDate>=end.date),]
-tail(df)
-prec=matrix(NA,ncol=8, nrow=nrow(df))
-colnames(prec) = colnames(df)[1:8]
+head(df)
+df$Week = as.numeric(as.Date(df$startDate)-orig.date) %/% 7
+df$Week
+partynames = c("M","L","KD","C","S","MP","V","SD")
 
-for(i in 1:8){
-  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
-  
+Y = df[,partynames] * df$n
+Y = sapply(Y, function(x) round(x,0))
+
+data = list(nperiod = max(df$Date),nhouses = length(levels(as.factor(df$house))),
+            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Date, org = as.numeric(as.factor(df$house)),
+            n = rowSums(Y), house = matrix(NA, ncol=ncol(Y), nrow=length(levels(as.factor(df$house)))))
+
+multi_diri <- '
+model {
+#observed model
+for(i in 1:npolls) { 
+y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i])
 }
 
-jags_addhouse ='
-model{
-#measurement model
-for(j in 1:nparties){
-for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j]+house[org[i],j], prec[i,j])
-}
-}
 #dynamic model
-for(j in 1:nparties){
-for(i in 2:nperiods){
-x[i,j] ~ dnorm(x[i-1,j],phi[j])
+for(i in 2:nperiod) {
+Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 1000
+x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
 }
+
+for (i in 1:nparties) { 
+alpha[i] ~ dunif(100, 1000) 
 }
-## priors
-for(i in 1:nparties){
-init.m[i] ~ dunif(0,1) 
-init.v[i] ~ dgamma(0.01,0.01)
-x[1,i] ~ dnorm(init.m[i], init.v[i])
-eps[i] ~ dgamma(1,1)
-phi[i] <- 1/eps[i]
-house[12,i] <- 0
+x[1, 1:nparties] ~ ddirch(alpha[])
+
+for (i in 1:nparties) { 
+house[12, i] <- 0
 }
 
 for (i in 2:nparties) { # for each party - house effects across houses sum to zero
@@ -533,36 +512,25 @@ for(j in 2:(nhouses-1)) {
 house[j, i] ~ dnorm(0, 0.01)
 }
 }
+
 }
 '
 
-y2 = as.matrix(df[,1:8])
-df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
-                                     "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
-
-all_data22014 = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max(df$Date)),
-                     nparties = ncol(y2), day = df$Date, npolls = nrow(df2), nperiods = max(df$Date),
-                     nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
-                     house = matrix(NA,nrow=length(levels(as.factor(df$house))), ncol=ncol(y2)))
-writeLines(jags_addhouse,con="jags_addhouse.bug")
-
-system.time(jags_all22014<- jags.model("jags_addhouse.bug", data = all_data22014, n.chain=3))
-system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x", "eps"), n.iter = ninter, thin = 20, burnin=5000))
-
-sum_all22014 = summary(all_out22014)
-add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
-out_phi22014 = all_out22014[,which(regexpr("eps", row.names(sum_all22014$statistics))==1)]
-par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi22014[[1]])){plot(out_phi22014[,i])}
-par(mfrow=c(1,1))  
+writeLines(multi_diri, con="DM-model")
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=100000, n.chain=3))
+#update(jags_DM,1000)
+ninter = 20000
+system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(sum_all22014 <-  summary(outDM))
+add_out2014 = outDM[,which(regexpr("x",row.names(sum_all22014$statistics))==1),]
 
 nperiods=max(df[,'Date'])
 nsim = dim(add_out2014[[1]])[1]*3
-mean_add2014 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
+mean_add2014 = matrix(NA, ncol=8, nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
-high_add2014 = high_add22014 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
-low_add2014 = low_add22014 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
+high_add2014 = high_add22014 = matrix(NA, ncol=8, nrow=nperiods)
+low_add2014 = low_add22014 = matrix(NA, ncol=8, nrow=nperiods)
 percentile5 = round(nsim*0.05)
 percentile95 = round(nsim*0.95)
 states_add2014= list()
@@ -576,10 +544,10 @@ for(i in 1:ncol(y2)){
 }
 
 pred22014 = matrix(NA, ncol=5, nrow=8)
-row.names(pred22014) = colnames(df)[1:8]
+row.names(pred22014) = partynames
 colnames(pred22014) = c("Elec_res","MAP","Low","High","Diff")
-elec2 = elec[,colnames(df)[1:8]]
-for(i in 1:ncol(y2)){
+elec2 = elec[,partynames]
+for(i in 1:8){
   pred22014[i,] =  cbind(elec2[3,i],mean_add2014[nrow(mean_add2014),i],low_add2014[nrow(low_add2014),i],high_add2014[nrow(high_add2014),i],(mean_add2014[nrow(mean_add2014),i]-elec2[3,i]))
 }
 pred22014
@@ -591,7 +559,5 @@ for(i in 1:8){
 }
 mse_elec2014
 
-
-add_out2014=addout_x 
 
 
