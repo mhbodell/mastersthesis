@@ -43,12 +43,9 @@ head(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
-
-
 
 jags_addhouse ='
 model{
@@ -234,8 +231,8 @@ for(i in 1:ncol(mean_add)){
   plot_df = data.frame(party = mean_add[,i] ,  low=low_add[,i]*100, high=high_add[,i]*100,
                        time=seq(orig.date,by='days', length=nperiods), party2 = rep(colnames(y2)[i], nperiods))
   points = data.frame(x=seq(orig.date,by='days',length=nperiods)[df3$Date], 
-                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date]))
-                      ,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
+                      y=df3[,i]*100, house=df3$house, party=rep(colnames(y)[i],length(df3$Date[length(df3$Date)][df3$Date])))
+                     # ,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
   basic_plot2[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
@@ -328,11 +325,9 @@ tail(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
-
 
 jags_addhouse ='
 model{
@@ -460,9 +455,8 @@ tail(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
 
 

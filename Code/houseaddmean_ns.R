@@ -43,12 +43,11 @@ head(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
 
-head(prec2)
+
 
 jags_addhouse ='
 model{
@@ -101,7 +100,7 @@ data_addhouse = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 system.time(jags_addhouse <- jags.model("jags_addhouse.bug", data = data_addhouse, n.chain=3))
 ninter=40000
-system.time(add_out <- coda.samples(jags_addhouse,variable.names = c("x", "eps", "house"), n.iter = ninter, thin = 20, burnin=4500))
+system.time(add_out <- coda.samples(jags_addhouse,variable.names = c("x", "eps", "house"), n.iter = ninter, thin = 20, burnin=5000))
 system.time(sum_add <- summary(add_out))
 
 addout_x = add_out[,which(regexpr("x", row.names(sum_add$statistics))==1)]
@@ -340,10 +339,11 @@ tail(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
+
+
 jags_addhouse ='
 model{
 #measurement model
@@ -483,10 +483,10 @@ df = df[-which(df$endDate>=end.date),]
 tail(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
+
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
 
 jags_addhouse ='
@@ -540,7 +540,8 @@ all_data22014 = list(y = y2, prec = prec, x = matrix(NA, ncol=ncol(y2), nrow=max
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 
 system.time(jags_all22014<- jags.model("jags_addhouse.bug", data = all_data22014, n.chain=3))
-system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x", "eps"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x", "eps"), n.iter = ninter, thin = 20, burnin=5000))
+
 sum_all22014 = summary(all_out22014)
 add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
 out_phi22014 = all_out22014[,which(regexpr("eps", row.names(sum_all22014$statistics))==1)]
@@ -549,7 +550,7 @@ for(i in 1: ncol(out_phi22014[[1]])){plot(out_phi22014[,i])}
 par(mfrow=c(1,1))  
 
 nperiods=max(df[,'Date'])
-nsim = dim(add_out[[1]])[1]*3
+nsim = dim(add_out2014[[1]])[1]*3
 mean_add2014 = matrix(NA, ncol=ncol(y2), nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
@@ -582,3 +583,6 @@ for(i in 1:8){
   mse_elec2014[i,]  = sum((mean_add2014[,i]-elec2[3,i])^2)/nrow(mean_add2014)
 }
 mse_elec2014
+
+
+add_out2014=addout_x 

@@ -47,9 +47,8 @@ head(df)
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
 
 jags_dlm ='
@@ -288,14 +287,11 @@ df = df[-which(df$endDate>=end.date),]
 tail(df)
 
 
-
-
 prec=matrix(NA,ncol=8, nrow=nrow(df))
 colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
 
 jags_dlm ='
@@ -433,14 +429,12 @@ df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
 df = df[-which(df$endDate>=end.date),]
 tail(df)
 
-
 prec=matrix(NA,ncol=8, nrow=nrow(df))
+colnames(prec) = colnames(df)[1:8]
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,(1 / (df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+  prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
+  
 }
-
 y = as.matrix(df[,1:8])
 all_data2014 = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
                 nparties=ncol(y), npolls=nrow(y), nperiods=as.numeric(end.date-orig.date), 
