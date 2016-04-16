@@ -61,17 +61,17 @@ y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i
 
 #dynamic model
 for(i in 2:nperiod) {
-  Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 1000
-  x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
+Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * conc
+x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
 }
 
 for (i in 1:nparties) { 
-  alpha[i] ~ dunif(100, 1000) 
+alpha[i] ~ dunif(100, 1000) 
 }
 x[1, 1:nparties] ~ ddirch(alpha[])
 
 for (i in 1:nparties) { 
-  house[12, i] <- 0
+house[12, i] <- 0
 }
 
 for (i in 2:nparties) { # for each party - house effects across houses sum to zero
@@ -88,18 +88,26 @@ house[j, i] ~ dnorm(0, 0.01)
 }
 }
 
+conc ~ dgamma(1,1)
+
 }
 '
 
 writeLines(multi_diri, con="DM-model")
-system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=50000, n.chain=3))
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=10000, n.chain=3))
 #update(jags_DM,1000)
 ninter = 20000
-system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house","conc"), n.iter = ninter, thin = 10, burnin=5000))
 system.time(sumDM <-  summary(outDM))
-addout_x= outDM[,which(regexpr("x",row.names(sumDM$statistics))==1),]
-
+addout_x = outDM[,which(regexpr("x", row.names(sumDM$statistics))==1)]
 addhouse = outDM[,which(regexpr("house", row.names(sumDM$statistics))==1)]
+out_conc = outDM[,which(regexpr("conc", row.names(sumDM$statistics))==1)]
+
+hist(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]), breaks=30, main="", xlab="Concentration parameter", freq=FALSE, las=1)
+lines(density(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]])), lwd=2, col="purple")
+abline(v=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]])), lwd=2)
+text(x=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))+6,y=0.008 ,labels=round(mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))), cex=0.7)
+
 map_house = matrix(NA, nrow=length(levels(as.factor(df$house))), ncol=8)
 j=1
 for(i in seq(1,dim(addhouse[[1]])[2],12)){
@@ -224,7 +232,7 @@ for(i in 1:ncol(mean_add)){
                        time=seq(orig.date,by='days', length=max(df$Date)), party2 = rep(partynames[i], max(df$Date)))
   points = data.frame(x=seq(orig.date,by='days',length=max(df$Date))[df3$Date], 
                       y=df3[,i]*100, house=df3$house, party=partynames[i],length(df3$Date[length(df3$Date)][df3$Date]))
-                      #,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100)
+  #,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100)
   basic_plot2[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
@@ -343,7 +351,7 @@ y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i
 
 #dynamic model
 for(i in 2:nperiod) {
-Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 1000
+Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * conc
 x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
 }
 
@@ -370,14 +378,16 @@ house[j, i] ~ dnorm(0, 0.01)
 }
 }
 
+conc ~ dgamma(1,1)
+
 }
 '
 
 writeLines(multi_diri, con="DM-model")
-system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=50000, n.chain=3))
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=10000, n.chain=3))
 #update(jags_DM,1000)
 ninter = 20000
-system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house", "conc"), n.iter = ninter, thin = 10, burnin=5000))
 system.time(sumDM <-  summary(outDM))
 add_out2010 = outDM[,which(regexpr("x",row.names(sumDM$statistics))==1),]
 
@@ -472,8 +482,8 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
 df = rbind(df, df2)
 df = df[order(df$startDate),]
 
-orig.date = df$startDate[1]-7
-end.date = elec$Date[2]
+orig.date = df$startDate[1]-1
+end.date = elec$Date[3]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
 df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
@@ -498,7 +508,7 @@ y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i
 
 #dynamic model
 for(i in 2:nperiod) {
-Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * 1000
+Alpha[i, 1:nparties] <- x[i-1,  1:nparties] * conc
 x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
 }
 
@@ -525,14 +535,16 @@ house[j, i] ~ dnorm(0, 0.01)
 }
 }
 
+conc ~ dgamma(1,1)
+
 }
 '
 
 writeLines(multi_diri, con="DM-model")
-system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=50000, n.chain=3))
+system.time(jags_DM <- jags.model("DM-model", data = data, n.adapt=10000, n.chain=3))
 #update(jags_DM,1000)
 ninter = 20000
-system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(outDM <- coda.samples(jags_DM,variable.names = c("y", "x","house", "conc"), n.iter = ninter, thin = 10, burnin=5000))
 system.time(sum_all22014 <-  summary(outDM))
 add_out2014 = outDM[,which(regexpr("x",row.names(sum_all22014$statistics))==1),]
 nperiods=max(df[,'Date'])
