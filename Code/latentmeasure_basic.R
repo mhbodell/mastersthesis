@@ -97,8 +97,8 @@ all_data = list(y = y,  npolls=nrow(y), prec=prec, nperiods=3500,
 
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
-ninter=40000
-system.time(all_out <- coda.samples(jags_all,variable.names = c("x", "eps"), n.iter = ninter, thin = 20, burnin=5000))
+ninter=10000
+system.time(all_out <- coda.samples(jags_all,variable.names = c("x", "eps"), n.iter = ninter, thin = 5))
 sum_all = summary(all_out)
 out_x = all_out[,which(regexpr("x", row.names(sum_all$statistics))==1)]
 sum_x = sum_all$statistics[which(regexpr("x", row.names(sum_all$statistics))==1),]
@@ -107,29 +107,6 @@ out_phi = all_out[,which(regexpr("eps", row.names(sum_all$statistics))==1)]
 par(mfrow=c(3,3))
 for(i in 1: ncol(out_phi[[1]])){plot(out_phi[,i], main=colnames(y)[i])}
 par(mfrow=c(1,1))  
-
-
-x = matrix(,ncol=8,nrow=3500)
-x[1,]<-0.15
-for(j in 1:8){
-  for(i in 2:3500){
-    x[i,j] <- rnorm(1,x[i-1,j],0.001)
-  }
-}
-
-
-n2 = NULL
-z = array(0,dim=c(3500,nrow(df),8))
-y = matrix(0, nrow=nrow(df), ncol=8)
-for(j in 1:8){
-  for(i in 1:nrow(df)){
-    n2[i] <- round(all_data$n[i]/all_data$k[i])
-    for(l in 1:all_data$k[i]){
-      z[l,i,j] <- rnorm(1,x[all_data$day[i]+l,j],(((x[all_data$day[i]+l,j]*(1-x[all_data$day[i]+l,j]))/n2[i])))
-    }
-    y[i,j] <- rnorm(1,(sum(z[1:all_data$k[i],i,j]*n2[i])/all_data$n[i]),1/prec[i,j])
-  }
-}
 
 
 ###    M        L        C       KD        S         V       MP        SD##
