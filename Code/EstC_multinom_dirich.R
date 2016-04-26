@@ -56,6 +56,10 @@ multi_diri <- '
 model {
 #observed model
 for(i in 1:npolls) { 
+n2[i] <-round(n[i]/k[i])
+for(j in 1:k[i]){
+
+}
 y[i, 1:nparties] ~ dmulti(x[day[i], 1:nparties] + house[org[i], 1:nparties], n[i])
 }
 

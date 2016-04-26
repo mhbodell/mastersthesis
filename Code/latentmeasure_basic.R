@@ -52,8 +52,6 @@ for(i in 1:8){
 }
 
 
-#dynamic model
-
 
 jags_dlm ='
 model{
@@ -63,7 +61,7 @@ for(i in 1:npolls){
 n2[i] <- round(n[i]/k[i])
 for(l in 1:nparties){
 for(j in 1:k[i]){
-z[j,i,l] ~ dnorm(x[day[i]+j,l],1/((x[day[i]+j,l]*(1-x[day[i]+j,l]))/n2[i]))
+z[j,i,l] <-x[day[i]+j,l]
 }
 y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l])
 }
@@ -79,7 +77,7 @@ x[i,j] ~ dnorm(x[i-1,j],1/eps[j])
 
 ## priors
 for(i in 1:nparties){
-init.m[i] ~ dunif(0,1)
+init.m[i] ~ dbeta(1,1)
 init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i],init.v[i])
 eps[i] ~ dgamma(1,1)
@@ -111,7 +109,7 @@ par(mfrow=c(1,1))
 
 ###    M        L        C       KD        S         V       MP        SD##
 
-nperiods=as.numeric(end.date-orig.date)
+nperiods=3500
 nsim = dim(all_out[[1]])[1]*3
 mean_basic2 = matrix(NA, ncol=ncol(y), nrow=nperiods)
 ind.start = 1
@@ -146,28 +144,33 @@ str(rChain)
 colnames(y)
 
 for(i in 1:8){
-  for(j in 1:nrow(df)){
-    prec[j,i] = ifelse(is.na(df[j,i]), NA ,((df[j,i]*(1-df[j,i])/df[i,'n'])))
-  }
+    prec[,i] = (df[,i]*(1-df[j,i])/df[,'n'])
+  
 }
 colnames(prec) = colnames(df[,1:8])
 head(prec)
 yrepM = yrepL = yrepKD = yrepC = yrepS = yrepMP = yrepV = yrepSD = matrix(NA, nrow=dim(rChain[[1]])[1], ncol=nrow(df))
 
+df$start = julian(df$startDate,orig.date)
+
 for(i in 1:dim(rChain[[1]])[1]){
   for(j in 1:nrow(df)){
-    yrepM[i,j] = rnorm(1, rChain[['M']][i,df$Date[j]], prec[j,'M'])
-    yrepL[i,j] = rnorm(1, rChain[['L']][i,df$Date[j]], prec[j,'L'])
-    yrepKD[i,j] = rnorm(1, rChain[['KD']][i,df$Date[j]], prec[j,'KD'])
-    yrepC[i,j] = rnorm(1, rChain[['C']][i,df$Date[j]], prec[j,'C'])
-    yrepS[i,j] = rnorm(1, rChain[['S']][i,df$Date[j]], prec[j,'S'])
-    yrepMP[i,j] = rnorm(1, rChain[['MP']][i,df$Date[j]], prec[j,'MP'])
-    yrepV[i,j] = rnorm(1, rChain[['V']][i,df$Date[j]], prec[j,'V'])
-    yrepSD[i,j] = rnorm(1, rChain[['SD']][i,df$Date[j]], prec[j,'SD'])
+    k = df$length[j]
+    yrepM[i,j] = rnorm(1, sum(rChain[['M']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'M'])
+    yrepL[i,j] = rnorm(1, sum(rChain[['L']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'L'])
+    yrepKD[i,j] = rnorm(1,sum(rChain[['KD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'KD'])
+    yrepC[i,j] = rnorm(1, sum(rChain[['C']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'C'])
+    yrepS[i,j] = rnorm(1, sum(rChain[['S']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'S'])
+    yrepMP[i,j] = rnorm(1, sum(rChain[['MP']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'MP'])
+    yrepV[i,j] = rnorm(1, sum(rChain[['V']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'V'])
+    yrepSD[i,j] = rnorm(1,sum(rChain[['SD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'SD'])
   }
 }
 
-yreps = list(M=yrepM,L=yrepL,KD=yrepKD,C=yrepC,S=yrepS,MP=yrepMP,V=yrepV,SD=yrepSD)
+
+yreps = list(M=na.omit(yrepM),L=na.omit(yrepL),KD=na.omit(yrepKD),C=na.omit(yrepC)
+             ,S=na.omit(yrepS),MP=na.omit(yrepMP),V=na.omit(yrepV),SD=na.omit(yrepSD))
+yreps = na.omit(yreps)
 bayespval = matrix(NA,nrow=8, ncol=6)
 rownames(bayespval) = partynames
 colnames(bayespval) = c("Min","Max","Mean","Var","Neg.val","Above1")
@@ -206,8 +209,9 @@ for(i in 1:ncol(mean_basic2)){
   plot_df = data.frame(party = mean_basic2[,i] ,  low=low_basic2[,i]*100, high=high_basic2[,i]*100,
                        time=seq(orig.date,by='days', length=nperiods), party2 = rep(colnames(y)[i], nperiods))
   points = data.frame(x=seq(orig.date,by='days',length=as.numeric(end.date-orig.date))[df$Date], 
-                      y=df[,i]*100, house=df$house, party=rep(colnames(y)[i],length(df$Date[length(df$Date)][df$Date])),
-                      high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
+                      y=df[,i]*100, house=df$house, party=rep(colnames(y)[i],length(df$Date[length(df$Date)][df$Date])))
+  #,
+   #                   high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
   basic_plot2[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
@@ -244,6 +248,17 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
+
+basic_plot2[[1]]
+basic_plot2[[2]]
+basic_plot2[[3]]
+basic_plot2[[4]]
+basic_plot2[[5]]
+basic_plot2[[6]]
+basic_plot2[[7]]
+basic_plot2[[8]]
+
+multiplot(  basic_plot2[[5]], basic_plot2[[8]], cols=2)
 
 
 multiplot(basic_plot2[[1]], basic_plot2[[2]], basic_plot2[[3]], basic_plot2[[4]], 
@@ -290,7 +305,7 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[1]-1
+orig.date = df$startDate[1]-2
 end.date = elec$Date[2]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
@@ -310,52 +325,55 @@ jags_dlm ='
 model{
 
 #observed model
-for(j in 1:nparties){
 for(i in 1:npolls){
-y[i,j] ~ dnorm(x[day[i],j],prec[i,j])
+n2[i] <- round(n[i]/k[i])
+for(l in 1:nparties){
+for(j in 1:k[i]){
+z[j,i,l] ~ dnorm(x[day[i]+j,l],1/((x[day[i]+j,l]*(1-x[day[i]+j,l]))/n2[i]))
+}
+y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l])
 }
 }
+
 
 #dynamic model
 for(j in 1:nparties){
 for(i in 2:nperiods){
-x[i,j] ~ dnorm(x[i-1,j],phi[j])
+x[i,j] ~ dnorm(x[i-1,j],1/eps[j])
 }
 }
 
 ## priors
 for(i in 1:nparties){
-init.m[i] ~ dunif(0,1)
+init.m[i] ~ dbeta(1,1)
 init.v[i] ~ dgamma(0.01,0.01)
 x[1,i] ~ dnorm(init.m[i],init.v[i])
 eps[i] ~ dgamma(1,1)
-phi[i] <- 1/eps[i]
 }
 
 }
 '
-
-head(df)
-head(prec)
 y = as.matrix(df[,1:8])
-all_data = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                nparties=ncol(y), npolls=nrow(y), nperiods=as.numeric(end.date-orig.date), 
-                phi = NULL, day=df$Date )
+colnames(y) = colnames(df)[1:8]
+da = seq(orig.date,by="days", length=max(df$Date))
+df$length = as.numeric(df$endDate-df$startDate)+1
+all_data = list(y = y,  npolls=nrow(y), prec=prec, nperiods=1500, 
+                day=julian(df$startDate,orig.date)-1,nparties=ncol(y), n=df$n, k=df$length, 
+                z = array(NA,dim=c(1500,nrow(y),ncol(y))))
+
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all2010<- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
-
 ninter=10000
-
 system.time(all_out2010 <- coda.samples(jags_all2010,variable.names = c("x", "eps"), n.iter = ninter, thin = 5))
 sum_all2010 = summary(all_out2010)
 out_x2010 = all_out2010[,which(regexpr("x", row.names(sum_all2010$statistics))==1)]
 sum_x2010 = sum_all2010$statistics[which(regexpr("x", row.names(sum_all2010$statistics))==1),]
 out_phi2010 = all_out2010[,which(regexpr("eps", row.names(sum_all2010$statistics))==1)]
-par(mfrow=c(3,3))
-for(i in 1: ncol(out_phi2010[[1]])){plot(out_phi2010[,i])}
-par(mfrow=c(1,1))  
+#par(mfrow=c(3,3))
+#for(i in 1: ncol(out_phi2010[[1]])){plot(out_phi2010[,i])}
+#par(mfrow=c(1,1))  
 
-nperiods=as.numeric(end.date-orig.date)
+nperiods=1500
 nsim = dim(all_out2010[[1]])[1]*3
 mean_basic2010 = matrix(NA, ncol=ncol(y), nrow=nperiods)
 ind.start = 1
@@ -383,8 +401,6 @@ for(i in 1:ncol(y)){
 }
 pred22010
 
-head(mean_basic2010)
-head(elec2)
 
 mse_elec2010 = matrix(NA, ncol=1, nrow=8)
 row.names(mse_elec2010) = row.names(pred22010)
@@ -433,7 +449,7 @@ df2 = data.frame(M=elec$M, L=elec$L,C=elec$C,KD=elec$KD,S=elec$S, V=elec$V,
                  house="Election" ,n=n)
 df = rbind(df, df2)
 df = df[order(df$startDate),]
-orig.date = df$startDate[1]
+orig.date = df$startDate[1]-2
 end.date = elec$Date[3]
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
@@ -447,10 +463,47 @@ for(i in 1:8){
   prec[,i] = (1 / (df[,i]*(1-df[,i])/df[,'n']))
   
 }
+
+
+jags_dlm ='
+model{
+
+#observed model
+for(i in 1:npolls){
+n2[i] <- round(n[i]/k[i])
+for(l in 1:nparties){
+for(j in 1:k[i]){
+z[j,i,l] ~ dnorm(x[day[i]+j,l],1/((x[day[i]+j,l]*(1-x[day[i]+j,l]))/n2[i]))
+}
+y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l])
+}
+}
+
+
+#dynamic model
+for(j in 1:nparties){
+for(i in 2:nperiods){
+x[i,j] ~ dnorm(x[i-1,j],1/eps[j])
+}
+}
+
+## priors
+for(i in 1:nparties){
+init.m[i] ~ dbeta(1,1)
+init.v[i] ~ dgamma(0.01,0.01)
+x[1,i] ~ dnorm(init.m[i],init.v[i])
+eps[i] ~ dgamma(1,1)
+}
+
+}
+'
 y = as.matrix(df[,1:8])
-all_data2014 = list(y = y, prec = prec , x = matrix(NA, ncol=ncol(y), nrow=as.numeric(end.date-orig.date)),
-                    nparties=ncol(y), npolls=nrow(y), nperiods=as.numeric(end.date-orig.date), 
-                    phi = NULL, day=df$Date )
+colnames(y) = colnames(df)[1:8]
+da = seq(orig.date,by="days", length=max(df$Date))
+df$length = as.numeric(df$endDate-df$startDate)+1
+all_data2014 = list(y = y,  npolls=nrow(y), prec=prec, nperiods=2940, 
+                day=julian(df$startDate,orig.date)-1,nparties=ncol(y), n=df$n, k=df$length, 
+                z = array(NA,dim=c(2940,nrow(y),ncol(y))))
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all2014<- jags.model("jags_dlm.bug", data = all_data2014, n.chain=3))
 
@@ -466,7 +519,7 @@ par(mfrow=c(3,3))
 for(i in 1: ncol(out_phi2014[[1]])){plot(out_phi2014[,i])}
 par(mfrow=c(1,1))  
 
-nperiods=as.numeric(end.date-orig.date)
+nperiods=2940
 nsim = dim(all_out2014[[1]])[1]*3
 mean_basic2014 = matrix(NA, ncol=ncol(y), nrow=nperiods)
 ind.start = 1

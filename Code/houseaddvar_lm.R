@@ -47,6 +47,24 @@ for(i in 1:8){
   
 }
 
+val2002 = as.Date("2002-09-15")
+elec$Date[1]
+before2006 = which(df$endDate<=elec$Date[1])
+dist1 = julian(df$endDate[before2006],val2002)  
+before2010 = which(which(df$endDate<=elec$Date[2])%in%before2006==FALSE)
+dist2 = julian(df$endDate[before2010], elec$Date[1])
+before2014 = which(which(df$endDate<=elec$Date[3])%in%c(before2006,before2010)==FALSE)
+dist3 = julian(df$endDate[before2014], elec$Date[2])
+dist4 = julian(df$endDate[-c(before2010,before2006,before2014)], elec$Date[3])
+df$distElec = c(dist1,dist2,dist3,dist4)
+df$distElec
+head(df2)
+before2010 = c(before2010,before2014[1])
+before2014 = before2014[-1]
+dist2 = julian(df$endDate[before2010], elec$Date[1])
+dist3 = julian(df$endDate[before2014], elec$Date[2])
+df$distElec = c(dist1,dist2,dist3,dist4)
+df$distElec
 
 
 jags_dlm ='
@@ -57,9 +75,9 @@ for(i in 1:npolls){
 n2[i] <- round(n[i]/k[i])
 for(l in 1:nparties){
 for(j in 1:k[i]){
-z[j,i,l] ~ dnorm(x[day[i]+j,l],(1/((x[day[i]+j,l]*(1-x[day[i]+j,l]))/n2[i]))+(1/house[org[i],l]))
+z[j,i,l] <- x[day[i]+j,l]
 }
-y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l]*(1/house[org[i],l]))
+y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l]*(1/house[org[i],l]*distElec[i]))
 }
 }
 
@@ -95,12 +113,12 @@ df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB
 all_data = list(y = y,  npolls=nrow(y), prec=prec, nperiods=3500, 
                 day=julian(df$startDate,orig.date)-1,nparties=ncol(y), n=df$n, k=df$length, 
                 nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
-                z = array(NA,dim=c(3500,nrow(y),ncol(y))))
+                z = array(NA,dim=c(3500,nrow(y),ncol(y))), distElec=df$distElec)
 
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
-ninter=20000
-system.time(add_out <- coda.samples(jags_all,variable.names = c("x", "eps", "house"), n.iter = ninter, thin = 10, burnin=5000))
+ninter=40000
+system.time(add_out <- coda.samples(jags_all,variable.names = c("x", "eps", "house"), n.iter = ninter, thin = 20, burnin=5000))
 system.time(sum_add <- summary(add_out))
 
 addout_x = add_out[,which(regexpr("x", row.names(sum_add$statistics))==1)]
@@ -412,8 +430,8 @@ all_data22010 = list(y = y2,  npolls=nrow(y2), prec=prec, nperiods=1500,
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 system.time(jags_addhouse2010 <- jags.model("jags_addhouse.bug", data = all_data22010, n.chain=3))
 
-ninter=10000
-system.time(all_out22010 <- coda.samples(jags_addhouse2010,variable.names = c("x"), n.iter = ninter, thin = 5, burnin=2000))
+ninter=20000
+system.time(all_out22010 <- coda.samples(jags_addhouse2010,variable.names = c("x"), n.iter = ninter, thin = 10, burnin=5000))
 sum_all22010 = summary(all_out22010)
 add_out2010 = all_out22010[,which(regexpr("x", row.names(sum_all22010$statistics))==1)]
 
@@ -457,11 +475,18 @@ mse_elec2010
 ####################################################
 ############ PREDICT 2014 ELECTION #################
 ####################################################
+####################################################
+library(rjags, lib="C:/Users/mirhu86/Documents/packages")
+data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
+polls = repmis::source_data(data_url, sep = ",", header = TRUE)
+colnames(polls)[4] = 'L'
 
 O = NULL
 for(i in 1:nrow(polls)){
   O[i] = ifelse(sum(polls[i,3:10], na.rm=TRUE)==100,0, sum(polls[i,11:12], na.rm=TRUE))
 }
+
+partynames =  c("M","L","KD","C","S","MP","V","SD")
 y =  polls[,partynames]
 y$O = O
 y$startDate = as.Date(polls$collectPeriodFrom)
@@ -511,9 +536,9 @@ for(i in 1:npolls){
 n2[i] <- round(n[i]/k[i])
 for(l in 1:nparties){
 for(j in 1:k[i]){
-z[j,i,l] ~ dnorm(x[day[i]+j,l],(1/((x[day[i]+j,l]*(1-x[day[i]+j,l]))/n2[i]))+(1/house[org[i],l]))
+z[j,i,l] <- x[day[i]+j,l]
 }
-y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l])
+y[i,l] ~ dnorm((sum(z[1:k[i],i,l]*n2[i])/n[i]), prec[i,l]+(1/house[org[i],l]))
 }
 }
 
@@ -553,8 +578,8 @@ all_data22014 = list(y = y2,  npolls=nrow(y2), prec=prec, nperiods=2940,
 
 writeLines(jags_addhouse,con="jags_addhouse.bug")
 system.time(jags_all22014<- jags.model("jags_addhouse.bug", data = all_data22014, n.chain=3))
-
-system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x"), n.iter = ninter, thin = 5, burnin=2000))
+ninter=40000
+system.time(all_out22014 <- coda.samples(jags_all22014,variable.names = c("x"), n.iter = ninter, thin = 20, burnin=4000))
 sum_all22014 = summary(all_out22014)
 add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
 
