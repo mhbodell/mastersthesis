@@ -42,18 +42,13 @@ head(df)
 partynames = c("M","L","KD","C","S","MP","V","SD","O")
 df$Day = julian(df$startDate,orig.date)-1
 
-Y = df[,partynames] * df$n
-Y = sapply(Y, function(x) round(x,0))
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 
-df$Date[nrow(df)]
-data = list(nperiod = 3500,k=df$length,
-            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Day,
-            n = rowSums(Y), b=matrix(NA,ncol=9, nrow=nrow(df)),
-            z=array(NA, dim=c(3500,9,nrow(df))))
-tail(df)
-
+data = list(nperiod = df$Day[nrow(df)]+df$length[nrow(df)],k=df$length,
+            npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
+            n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)),
+            z=array(NA, dim=c(df$Day[nrow(df)]+df$length[nrow(df)],9,nrow(df))))
 
 diri_diri_lm <- '
 model {
@@ -81,26 +76,28 @@ alpha[i] ~ dunif(100, 1000)
 }
 
 x[1, 1:nparties] ~ ddirch(alpha[])
-conc ~ dgamma(1,1)
+conc ~ dgamma(1,0.001)
 
 }
 '
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=10000)) 
-ninter=30000
-system.time(add_out <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
-system.time(sum_add <- summary(add_out))
-addout_x2 = add_out[,which(regexpr("x", row.names(sum_add$statistics))==1)]
-out_conc = add_out[,which(regexpr("conc", row.names(sum_add$statistics))==1)]
-            
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=20000)) 
+ninter=40000
+system.time(add_out2 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 20, burnin=5000))
+system.time(sum_add2 <- summary(add_out2))
+addout_x2 = add_out2[,which(regexpr("x", row.names(sum_add2$statistics))==1)]
+out_conc = add_out2[,which(regexpr("conc", row.names(sum_add2$statistics))==1)]
+     
+       
 hist(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]), breaks=30, main="", xlab="Concentration parameter", freq=FALSE, las=1)
 lines(density(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]])), lwd=2, col="purple")
 abline(v=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]])), lwd=2)
 text(x=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))+6,y=0.008 ,labels=round(mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))), cex=0.7)
             
 
+nperiods = df$Day[nrow(df)]+df$length[nrow(df)]
 nperiods = 3500
-nsim = 6000
+nsim = dim(add_out2[[1]])[1]*3
 mean_add2 = matrix(NA, ncol=9, nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
@@ -118,36 +115,37 @@ for(i in 1:9){
   states_add2[[i]] = rbind(addout_x2[[1]][,ind.start[i]:ind.end[i]],addout_x2[[2]][,ind.start[i]:ind.end[i]],addout_x2[[3]][,ind.start[i]:ind.end[i]])
 }
 str(states_add2)
+partynames = c("M","L","KD","C","S","MP","V","SD","O")
 colnames(mean_add2) = partynames
 ##################################################################
 ############# POSTERIOR PREDICTIVE CHECKING ######################
 ##################################################################
-partynames = c("M","L","KD","C","S","MP","V","SD","O")
 
-rChain = list()
-rChain[[partynames[1]]] = states_add2[[1]];rChain[[partynames[2]]] = states_add2[[2]];rChain[[partynames[3]]] = states_add2[[3]]
-rChain[[partynames[4]]] = states_add2[[4]];rChain[[partynames[5]]] = states_add2[[5]];rChain[[partynames[6]]] = states_add2[[6]]
-rChain[[partynames[7]]] = states_add2[[7]];rChain[[partynames[8]]] = states_add2[[8]];rChain[[partynames[9]]] = states_add2[[9]]
-str(rChain)
+
+rChain2 = list()
+rChain2[[partynames[1]]] = states_add2[[1]];rChain2[[partynames[2]]] = states_add2[[2]];rChain2[[partynames[3]]] = states_add2[[3]]
+rChain2[[partynames[4]]] = states_add2[[4]];rChain2[[partynames[5]]] = states_add2[[5]];rChain2[[partynames[6]]] = states_add2[[6]]
+rChain2[[partynames[7]]] = states_add2[[7]];rChain2[[partynames[8]]] = states_add2[[8]];rChain2[[partynames[9]]] = states_add2[[9]]
+str(rChain2)
 
 
 df$Start = julian(df$startDate,orig.date)
 
-yrep1 = array(NA, dim=c(nrow(df), 9,6000))
+yrep1 = array(NA, dim=c(nrow(df), 9,nsim))
 library(gtools)
-for(i in 1:dim(rChain[[1]])[1]){
+for(i in 1:dim(rChain2[[1]])[1]){
   for(j in 1:nrow(df)){
     k = df$length[j]
     n2 = round(df$n[j]/df$length[j])
-    M = sum(rChain[['M']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    L = sum(rChain[['L']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    KD = sum(rChain[['KD']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    C = sum(rChain[['C']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    S = sum(rChain[['S']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    MP = sum(rChain[['MP']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    V = sum(rChain[['V']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    SD = sum(rChain[['SD']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
-    O = sum(rChain[['O']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    M = sum(rChain2[['M']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    L = sum(rChain2[['L']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    KD = sum(rChain2[['KD']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    C = sum(rChain2[['C']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    S = sum(rChain2[['S']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    MP = sum(rChain2[['MP']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    V = sum(rChain2[['V']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    SD = sum(rChain2[['SD']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
+    O = sum(rChain2[['O']][i,c(df$Start[j]:(df$Start[j]+k))]*n2)/df$n[j]
     
     alphas = c(M,L,KD,C,S,MP,V,SD,O) * df$n[j]
     
@@ -157,26 +155,28 @@ for(i in 1:dim(rChain[[1]])[1]){
 }
 
 
-bayespval = matrix(NA,nrow=9, ncol=6)
-rownames(bayespval) = partynames
-colnames(bayespval) = c("Min","Max","Mean","Var","Neg.val","Above1")
+bayespval2 = matrix(NA,nrow=9, ncol=6)
+rownames(bayespval2) = partynames
+colnames(bayespval2) = c("Min","Max","Mean","Var","Neg.val","Above1")
 
-for(i in c(1:8,13)){
-  bayespval[i,1] = sum(ifelse(apply(yrep1[,i,],2,min)>=min(df[,i]),1,0))/nsim
-  bayespval[i,2] = sum(ifelse(apply(yrep1[,i,],2,max)>=max(df[,i]),1,0))/nsim
-  bayespval[i,3] = sum(ifelse(apply(yrep1[,i,],2,mean)>=mean(df[,i]),1,0))/nsim
-  bayespval[i,4] = sum(ifelse(apply(yrep1[,i,],2,var)>=var(df[,i]),1,0))/nsim
-  bayespval[i,5] = sum(ifelse(yrep1[,i,]<0,1,0))/(dim(yrep1[,i,])[1]*dim(yrep1[,i,])[2])
-  bayespval[i,6] = sum(ifelse(yrep1[,i,]>1,1,0))/(dim(yrep1[,i,])[1]*dim(yrep1[,i,])[2])
+ind = c(1:8,13)
+for(i in 1:9){
+  k = ind[i]
+  bayespval2[i,1] = sum(ifelse(apply(yrep1[,i,],2,min)>=min(df[,k]),1,0))/nsim
+  bayespval2[i,2] = sum(ifelse(apply(yrep1[,i,],2,max)>=max(df[,k]),1,0))/nsim
+  bayespval2[i,3] = sum(ifelse(apply(yrep1[,i,],2,mean)>=mean(df[,k]),1,0))/nsim
+  bayespval2[i,4] = sum(ifelse(apply(yrep1[,i,],2,var)>=var(df[,k]),1,0))/nsim
+  bayespval2[i,5] = sum(ifelse(yrep1[,i,]<0,1,0))/(dim(yrep1[,i,])[1]*dim(yrep1[,i,])[2])
+  bayespval2[i,6] = sum(ifelse(yrep1[,i,]>1,1,0))/(dim(yrep1[,i,])[1]*dim(yrep1[,i,])[2])
 }
-bayespval
+bayespval2
 
 
 #################################################
 ################# PLOTS #########################
 #################################################
 
-basic_plot2 = list()
+basic_plot22 = list()
 
 head(y)
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
@@ -192,7 +192,7 @@ for(i in 1:9){
   points = data.frame(x=seq(orig.date,by='days',length=nperiods)[df$Date], 
                       y=df[,pp]*100,  party=rep(partynames[i],length(df$Date[length(df$Date)][df$Date])))
   # ,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
-  basic_plot2[[i]] <-  ggplot(plot_df) +
+  basic_plot22[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
     geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill=cols[i]) + 
@@ -231,17 +231,17 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
-basic_plot2[[1]]
-basic_plot2[[2]]
-basic_plot2[[3]]
-basic_plot2[[4]]
-basic_plot2[[5]]
-basic_plot2[[6]]
-basic_plot2[[7]]
-basic_plot2[[8]]
-basic_plot2[[9]]
-multiplot(basic_plot2[[1]], basic_plot2[[2]], basic_plot2[[3]], basic_plot2[[4]], 
-          basic_plot2[[5]], basic_plot2[[6]], basic_plot2[[7]], basic_plot2[[8]], basic_plot2[[9]], cols=3)
+basic_plot22[[1]]
+basic_plot22[[2]]
+basic_plot22[[3]]
+basic_plot22[[4]]
+basic_plot22[[5]]
+basic_plot22[[6]]
+basic_plot22[[7]]
+basic_plot22[[8]]
+basic_plot22[[9]]
+multiplot(basic_plot22[[1]], basic_plot22[[2]], basic_plot22[[3]], basic_plot22[[4]], 
+          basic_plot22[[5]], basic_plot22[[6]], basic_plot22[[7]], basic_plot22[[8]], basic_plot22[[9]], cols=3)
 
 
 
@@ -294,13 +294,12 @@ tail(df)
 partynames = c("M","L","KD","C","S","MP","V","SD","O")
 df$Day = julian(df$startDate,orig.date)-1
 
-Y = df[,partynames] * df$n
-Y = sapply(Y, function(x) round(x,0))
+
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 data = list(nperiod = df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),k=df$length,
-            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Day,
-            n = rowSums(Y), b=matrix(NA,ncol=9, nrow=nrow(df)),
+            npolls = nrow(df),  nparties = ncol(Y), y = df[,partynames], day = df$Day,
+            n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)),
             z=array(NA, dim=c(df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),9,nrow(df))))
 
 tail(df)
@@ -332,63 +331,63 @@ alpha[i] ~ dunif(100, 1000)
 }
 
 x[1, 1:nparties] ~ ddirch(alpha[])
-conc ~ dgamma(1,1)
+conc ~ dgamma(1,0.001)
 
 }
 '
 
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=10000)) 
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=20000)) 
 ninter=30000
-system.time(all_out22010 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
-system.time(sum_add22010 <- summary(all_out22010))
-add_out2010 = all_out22010[,which(regexpr("x", row.names(sum_add22010$statistics))==1)]
+system.time(all_out220102 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
+system.time(sum_add220102 <- summary(all_out220102))
+add_out20102 = all_out220102[,which(regexpr("x", row.names(sum_add220102$statistics))==1)]
 
 nperiods= df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)]))
-nsim = dim(add_out2010[[1]])[1]*3
-mean_add2010 = matrix(NA, ncol=9, nrow=nperiods)
+nsim = dim(add_out20102[[1]])[1]*3
+mean_add20102 = matrix(NA, ncol=9, nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
-high_add2010 = matrix(NA, ncol=9, nrow=nperiods)
-low_add2010 =  matrix(NA, ncol=9, nrow=nperiods)
+high_add20102 = matrix(NA, ncol=9, nrow=nperiods)
+low_add20102 =  matrix(NA, ncol=9, nrow=nperiods)
 percentile5 = round(nsim*0.05)
 percentile95 = round(nsim*0.95)
-states_add2010= list()
-colnames(mean_add2010) = colnames(low_add2010) =colnames(high_add2010) = partynames
+states_add20102= list()
+colnames(mean_add20102) = colnames(low_add20102) =colnames(high_add20102) = partynames
 for(i in 1:9){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
-  mean_add2010[,i] = apply(rbind(add_out2010[[1]][,ind.start[i]:ind.end[i]],add_out2010[[2]][,ind.start[i]:ind.end[i]],add_out2010[[3]][,ind.start[i]:ind.end[i]]),2,mean)
-  low_add2010[,i] = apply(rbind(add_out2010[[1]][,ind.start[i]:ind.end[i]],add_out2010[[2]][,ind.start[i]:ind.end[i]],add_out2010[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
-  high_add2010[,i] = apply(rbind(add_out2010[[1]][,ind.start[i]:ind.end[i]],add_out2010[[2]][,ind.start[i]:ind.end[i]],add_out2010[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
+  mean_add20102[,i] = apply(rbind(add_out20102[[1]][,ind.start[i]:ind.end[i]],add_out20102[[2]][,ind.start[i]:ind.end[i]],add_out20102[[3]][,ind.start[i]:ind.end[i]]),2,mean)
+  low_add20102[,i] = apply(rbind(add_out20102[[1]][,ind.start[i]:ind.end[i]],add_out20102[[2]][,ind.start[i]:ind.end[i]],add_out20102[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
+  high_add20102[,i] = apply(rbind(add_out20102[[1]][,ind.start[i]:ind.end[i]],add_out20102[[2]][,ind.start[i]:ind.end[i]],add_out20102[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
 tail(df)
 
-pred22010 = matrix(NA, ncol=5, nrow=9)
-row.names(pred22010) = partynames
-colnames(pred22010) = c("Elec_res","MAP","Low","High","Diff")
+pred220102 = matrix(NA, ncol=5, nrow=9)
+row.names(pred220102) = partynames
+colnames(pred220102) = c("Elec_res","MAP","Low","High","Diff")
 
 elec2 = elec[,partynames]
 for(i in 1:9){
-  pred22010[i,] =  cbind(elec2[2,i],mean_add2010[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i],low_add2010[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i],high_add2010[nrow(high_add2010),i],(mean_add2010[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i]-elec2[2,i]))
+  pred220102[i,] =  cbind(elec2[2,i],mean_add20102[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i],low_add20102[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i],high_add20102[nrow(high_add2010),i],(mean_add20102[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i]-elec2[2,i]))
 }
-pred22010
+pred220102
 
 
 
 
-rmse_elec2010 = matrix(NA, ncol=1, nrow=9)
-row.names(rmse_elec2010) = row.names(pred22010)
+rmse_elec20102 = matrix(NA, ncol=1, nrow=9)
+row.names(rmse_elec20102) = row.names(pred220102)
 ind.start = 1
 ind.end = nperiods
 for(i in 1:9){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
-  rmse_elec2010[i,]  = sqrt((sum((rbind(add_out2010[[1]][,ind.start[i]:ind.end[i]],add_out2010[[2]][,ind.start[i]:ind.end[i]],
-                                       add_out2010[[3]][,ind.start[i]:ind.end[i]])[,df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)]))]-elec2[2,i])^2)/nsim))
+  rmse_elec20102[i,]  = sqrt((sum((rbind(add_out20102[[1]][,ind.start[i]:ind.end[i]],add_out20102[[2]][,ind.start[i]:ind.end[i]],
+                                       add_out20102[[3]][,ind.start[i]:ind.end[i]])[,df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)]))]-elec2[2,i])^2)/nsim))
 }
-rmse_elec2010
+rmse_elec20102
 
 ####################################################
 ############ PREDICT 2014 ELECTION #################
@@ -438,14 +437,12 @@ tail(df)
 partynames = c("M","L","KD","C","S","MP","V","SD","O")
 df$Day = julian(df$startDate,orig.date)-1
 
-Y = df[,partynames] * df$n
-Y = sapply(Y, function(x) round(x,0))
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 
 data = list(nperiod = df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),k=df$length,
-            npolls = nrow(df),  nparties = ncol(Y), y = Y, day = df$Day,
-            n = rowSums(Y), b=matrix(NA,ncol=9, nrow=nrow(df)),
+            npolls = nrow(df),  nparties = ncol(Y), y = df[,partynames], day = df$Day,
+            n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)),
             z=array(NA, dim=c(df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),9,nrow(df))))
 
 
@@ -475,60 +472,59 @@ alpha[i] ~ dunif(100, 1000)
 }
 
 x[1, 1:nparties] ~ ddirch(alpha[])
-conc ~ dgamma(1,1)
+conc ~ dgamma(1,0.001)
 
 }
 '
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=10000)) 
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=20000)) 
 ninter=30000
-system.time(all_out22014 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
-sum_all22014 = summary(all_out22014)
-add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
+system.time(all_out220142 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
+sum_all220142 = summary(all_out220142)
+add_out20142 = all_out220142[,which(regexpr("x", row.names(sum_all220142$statistics))==1)]
 
 
 nperiods=df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)]))
-nsim = dim(all_out22014[[1]])[1]*3
-mean_add2014 = matrix(NA, ncol=9, nrow=nperiods)
+nsim = dim(all_out220142[[1]])[1]*3
+mean_add20142 = matrix(NA, ncol=9, nrow=nperiods)
 ind.start = 1
 ind.end = nperiods
-high_add2014 = high_add22014 = matrix(NA, ncol=9, nrow=nperiods)
-low_add2014 = low_add22014 = matrix(NA, ncol=9, nrow=nperiods)
+high_add20142 =  matrix(NA, ncol=9, nrow=nperiods)
+low_add20142 =  matrix(NA, ncol=9, nrow=nperiods)
 percentile5 = round(nsim*0.05)
 percentile95 = round(nsim*0.95)
-states_add2014= list()
-colnames(mean_add2014) = colnames(low_add2014) =colnames(high_add2014) = partynames
+states_add20142= list()
+colnames(mean_add20142) = colnames(low_add20142) =colnames(high_add20142) = partynames
 for(i in 1:9){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
-  mean_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2,mean)
-  low_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
-  high_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
+  mean_add20142[,i] = apply(rbind(add_out20142[[1]][,ind.start[i]:ind.end[i]],add_out20142[[2]][,ind.start[i]:ind.end[i]],add_out20142[[3]][,ind.start[i]:ind.end[i]]),2,mean)
+  low_add20142[,i] = apply(rbind(add_out20142[[1]][,ind.start[i]:ind.end[i]],add_out20142[[2]][,ind.start[i]:ind.end[i]],add_out20142[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile5])
+  high_add20142[,i] = apply(rbind(add_out20142[[1]][,ind.start[i]:ind.end[i]],add_out20142[[2]][,ind.start[i]:ind.end[i]],add_out20142[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
-df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)]))
 
-pred22014 = matrix(NA, ncol=5, nrow=9)
-row.names(pred22014) = partynames
-colnames(pred22014) = c("Elec_res","MAP","Low","High","Diff")
+pred220142 = matrix(NA, ncol=5, nrow=9)
+row.names(pred220142) = partynames
+colnames(pred220142) = c("Elec_res","MAP","Low","High","Diff")
 elec2 = elec[,partynames]
 for(i in 1:9){
-  pred22014[i,] =    cbind(elec2[3,i],mean_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],low_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],high_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],(mean_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i]-elec2[3,i]))
+  pred220142[i,] =    cbind(elec2[3,i],mean_add20142[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],low_add20142[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],high_add20142[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],(mean_add20142[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i]-elec2[3,i]))
   
 }
-pred22014
+pred220142
 
 ind.start = 1
 ind.end = nperiods
-rmse_elec2014 = matrix(NA, ncol=1, nrow=9)
-row.names(rmse_elec2014) = row.names(pred22014)
+rmse_elec20142 = matrix(NA, ncol=1, nrow=9)
+row.names(rmse_elec20142) = row.names(pred220142)
 for(i in 1:9){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
-  rmse_elec2014[i,]  = sqrt((sum((rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],
-                                       add_out2014[[3]][,ind.start[i]:ind.end[i]])[,df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)]))]-elec2[3,i])^2)/nsim))
+  rmse_elec20142[i,]  = sqrt((sum((rbind(add_out20142[[1]][,ind.start[i]:ind.end[i]],add_out20142[[2]][,ind.start[i]:ind.end[i]],
+                                       add_out20142[[3]][,ind.start[i]:ind.end[i]])[,df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)]))]-elec2[3,i])^2)/nsim))
   
 }
-mse_elec2014
+rmse_elec20142
 
 ################
