@@ -3,22 +3,22 @@ data_url = "https://github.com/MansMeg/SwedishPolls/raw/master/Data/Polls.csv"
 polls = repmis::source_data(data_url, sep = ",", header = TRUE)
 colnames(polls)[4] = 'L'
 
-O = NULL
-for(i in 1:nrow(polls)){
-  O[i] = ifelse(sum(polls[i,3:10], na.rm=TRUE)==100,0, sum(polls[i,11:12], na.rm=TRUE))
-}
-partynames =  c("M","L","KD","C","S","MP","V","SD")
-y =  polls[,partynames]
-y$O = O
+
+y =  polls[3:10]
 y$startDate = as.Date(polls$collectPeriodFrom)
 y$endDate = as.Date(polls$collectPeriodTo)
-y$house = polls$house
+y$house = as.factor(polls$house)
 no_n = which(is.na(polls[,'n']))
 y = y[-no_n,]
 y$n = polls$n[-no_n]
+y = y[-which(is.na(y[,'SD'])),]
+y[,1:8] = y[,1:8]/100
+y = y[-which(is.na(y[,'startDate'])),]
+y$O = 1-rowSums(y[,1:8])
+y = y[-which(y$O==0),]
+df = y
 
-y[,1:9] = y[,1:9]/100
-df = na.omit(y[,-9])
+
 
 elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
                         c(0.3006,0.0706,0.0560,0.656,0.3066,0.0734,0.0560,0.0570),
@@ -95,10 +95,10 @@ df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 df$Day = julian(df$startDate,orig.date)-1
 
-all_data = list(y = y,  npolls=nrow(y), prec=prec, nperiods=df$Day[nrow(df)]+df$length[nrow(df)], 
+all_data = list(y = y,  npolls=nrow(y), prec=prec, nperiods=df$Day[nrow(df)]+df$length[nrow(df)]+1, 
                 day=df$Day, nparties=ncol(y), n=df$n, k=df$length, 
                 nhouses = length(levels(as.factor(df$house))), org=as.numeric(df$house),
-                z = array(NA,dim=c(df$Day[nrow(df)]+df$length[nrow(df)],nrow(y),ncol(y))))
+                z = array(NA,dim=c(df$Day[nrow(df)]+df$length[nrow(df)]+1,nrow(y),ncol(y))))
 
 writeLines(jags_dlm,con="jags_dlm.bug")
 system.time(jags_all <- jags.model("jags_dlm.bug", data = all_data, n.chain=3))
@@ -112,53 +112,36 @@ par(mfrow=c(3,3))
 for(i in 1: ncol(addout_phi[[1]])){plot(addout_phi[,i], main=colnames(y)[i])}
 par(mfrow=c(1,1)) 
 
-addhouse = add_out[,which(regexpr("house", row.names(sum_add$statistics))==1)]
-addhouse2 = cbind(addhouse[[1]],addhouse[[2]],addhouse[[3]])
-str(addhouse)
+
+################################################################
+################## house effects ###############################
+################################################################
+heEE = matrix(NA, nrow=length(apply(addhouse2[,seq(1,dim(addhouse[[1]])[2],96)],2,mean)), ncol = 12*8)
+
+for(i in c(1:(12*8))){
+  heEE[,i]  = apply(addhouse2[,seq(1,dim(addhouse[[1]])[2],96)+(i-1)],2,mean)
+}
+colnames(heEE) = rep(levels(df$house),8)
+
+par(mfrow=c(3,3))
 j=1
-ml = ml2 = ml3 = list()
-for(i in seq(1,dim(addhouse[[1]])[2],96)){
-  ml[[j]] = rbind(addhouse[[1]],addhouse[[2]],addhouse[[3]])[,i]
-  ml2[[j]] = rbind(addhouse[[1]],addhouse[[2]],addhouse[[3]])[,i+1]
-  ml3[[j]] = rbind(addhouse[[1]],addhouse[[2]],addhouse[[3]])[,i+2]
+for(i in seq(1,ncol(heEE),12)){
+  plot(heEE[,i], type="l", ylim=c(min(apply(heEE[,i:(i+11)],2,min)),max(apply(heEE[,i:(i+11)],2,max))), las=1, ylab="House effect", xlab="Poll", main=colnames(y)[j])
+  lines(heEE[,i+1], col="red");lines(heEE[,i+2], col="blue3");lines(heEE[,i+3], col="orange");lines(heEE[,i+4], col="purple")
+  lines(heEE[,i+5], col="forestgreen");lines(heEE[,i+6], col="cyan");lines(heEE[,i+7], col="hotpink");lines(heEE[,i+8], col="grey")
+  lines(heEE[,i+9], col="salmon");lines(heEE[,i+10], col="green");lines(heEE[,i+11], lty=2)
   j=j+1
 }
+plot(0,xaxt='n',yaxt='n',bty='n',pch='',ylab='',xlab='')
+legend("topleft",legend=c(levels(df$house)[1],levels(df$house)[2],levels(df$house)[3],
+       levels(df$house)[4],levels(df$house)[5],levels(df$house)[6],levels(df$house)[7],
+       levels(df$house)[8],levels(df$house)[9],levels(df$house)[10],levels(df$house)[11],levels(df$house)[12]),
+       lty=c(rep(1,11),2), col=c("black","red","blue3","orange","purple","forestgreen","cyan","hotpink","grey","salmon","green","black"))
 
-mean(unlist(ml))
-mean(unlist(ml2))
-mean(unlist(ml3))
-
-pl = list()  
-j=1
-for(i in seq(1,length(ml),8)){
-  pl[[j]] = rbind(ml[[i]],ml[[i+1]],ml[[i+2]],ml[[i+3]],ml[[i+4]],ml[[i+5]],ml[[i+6]],ml[[i+7]])
-  j=j+1
-}
+par(mfrow=c(1,1))
 
 
-
-map_house = matrix(NA, nrow=length(levels(as.factor(df$house))), ncol=ncol(y))
-for(i in 2:length(pl)){
-  for(j in 1:12){
-    fin1 = pl[[1]][1,j]
-    fin1 = c(fin1,pl[[i]][1,j])
-    map_house[j,] = mean(fin1)
-  }
-  
-}
-
-
-
-j=1
-for(i in seq(1,dim(addhouse[[1]])[2],12)){
-  map_house[,j] = apply(as.matrix(addhouse[,seq(i,i+11,1)]),2,mean)
-  j = j+1
-}
-row.names(map_house) = levels(as.factor(df$house))
-colnames(map_house) = colnames(y)
-map_house 
-
-nperiods=df$Day[nrow(df)]+df$length[nrow(df)]+10
+nperiods=df$Day[nrow(df)]+df$length[nrow(df)]+1
 nsim = dim(add_outb[[1]])[1]*3
 mean_add = matrix(NA, ncol=8, nrow=nperiods)
 ind.start = 1
@@ -206,26 +189,14 @@ for(i in 1:8){
   
 }
 
-he = matrix(NA, ncol=ncol(prec),nrow=nrow(df))
-for(k in 1:ncol(prec)){
-  for(i in 1:length(row.names(map_house))){
-    ins = row.names(map_house)[i]
-    for(j in 1:nrow(df)){
-      if(df[j,'house']==ins){
-        he[j,k] = map_house[i,k]
-      } else{}
-    }
-  }
-}
-colnames(he) = colnames(df3[,1:8])
 
 colnames(prec) = colnames(df3[,1:8])
-df$start = julian(df$startDate,orig.date)
+df$start = julian(df$startDate,orig.date)-1
 yrepM = yrepL = yrepKD = yrepC = yrepS = yrepMP = yrepV = yrepSD = matrix(NA, nrow=dim(rChain[[1]])[1], ncol=nrow(df))
 for(i in 1:dim(rChain[[1]])[1]){
   for(j in 1:nrow(df)){
     k = df$length[j]
-    yrepM[i,j] = rnorm(1, sum(rChain[['M']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'M'])
+    yrepM[i,j] = rnorm(1, sum(rChain[['M']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'M'])
     yrepL[i,j] = rnorm(1, sum(rChain[['L']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'L'])
     yrepKD[i,j] = rnorm(1,sum(rChain[['KD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'KD'])
     yrepC[i,j] = rnorm(1, sum(rChain[['C']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'C'])
@@ -282,7 +253,17 @@ bayespval
 basic_plot2 = list()
 
 head(y)
+
+df3 = df3[,colnames(y)]
 df3$house = df$house
+df3$startDate = df$startDate
+df3$endDate = df$endDate
+df3$n = df$n
+df3$Date = df$Date
+dayssinceorigStart = julian(df3$startDate, origin=orig.date) 
+dayssinceorigEnd = julian(df3$endDate, origin=orig.date) 
+df3$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
+
 cols = c("blue","lightblue3","darkblue","chartreuse3","red","forestgreen","darkred","skyblue3")
 library(ggplot2)
 for(i in 1:ncol(mean_add)){

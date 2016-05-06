@@ -62,28 +62,26 @@ for(l in 1:nparties){
 b[i,l] <- sum((z[1:k[i],l,i]*n2[i])/n[i])
 
 }
-b2[i,1:nparties] <- b[i,1:nparties] * n[i]
-y[i, 1:nparties] ~ ddirch(b2[i,1:nparties])
+y[i, 1:nparties] ~ ddirch(b[i,1:nparties] * n[i])
 
 }
 #dynamic model
 for(i in 2:nperiod) {
-Alpha[i, 1:nparties] <- x[i-1,  1:nparties]* conc
-x[i, 1:nparties] ~ ddirch(Alpha[i, 1:nparties])
+x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties]* conc)
 }
 for (i in 1:nparties) { 
 alpha[i] ~ dunif(100, 1000) 
 }
 
 x[1, 1:nparties] ~ ddirch(alpha[])
-conc ~ dgamma(1,0.001)
+conc ~ dgamma(1,0.0001)
 
 }
 '
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=20000)) 
-ninter=40000
-system.time(add_out2 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 20, burnin=5000))
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
+ninter=10000
+system.time(add_out2 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 5, burnin=1000))
 system.time(sum_add2 <- summary(add_out2))
 addout_x2 = add_out2[,which(regexpr("x", row.names(sum_add2$statistics))==1)]
 out_conc = add_out2[,which(regexpr("conc", row.names(sum_add2$statistics))==1)]
@@ -92,11 +90,10 @@ out_conc = add_out2[,which(regexpr("conc", row.names(sum_add2$statistics))==1)]
 hist(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]), breaks=30, main="", xlab="Concentration parameter", freq=FALSE, las=1)
 lines(density(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]])), lwd=2, col="purple")
 abline(v=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]])), lwd=2)
-text(x=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))+6,y=0.008 ,labels=round(mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))), cex=0.7)
+text(x=mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))-300,y=0.00027 ,labels=round(mean(rbind(out_conc[[1]],out_conc[[2]],out_conc[[3]]))), cex=0.7)
             
 
 nperiods = df$Day[nrow(df)]+df$length[nrow(df)]
-nperiods = 3500
 nsim = dim(add_out2[[1]])[1]*3
 mean_add2 = matrix(NA, ncol=9, nrow=nperiods)
 ind.start = 1
@@ -129,7 +126,7 @@ rChain2[[partynames[7]]] = states_add2[[7]];rChain2[[partynames[8]]] = states_ad
 str(rChain2)
 
 
-df$Start = julian(df$startDate,orig.date)
+df$Start = julian(df$startDate,orig.date)-1
 
 yrep1 = array(NA, dim=c(nrow(df), 9,nsim))
 library(gtools)
@@ -178,7 +175,6 @@ bayespval2
 
 basic_plot22 = list()
 
-head(y)
 dayssinceorigStart = julian(df$startDate, origin=orig.date) 
 dayssinceorigEnd = julian(df$endDate, origin=orig.date) 
 df$Date = floor((dayssinceorigStart + dayssinceorigEnd ) / 2)
@@ -191,12 +187,10 @@ for(i in 1:9){
                        time=seq(orig.date,by='days', length=nperiods), party2 = rep(partynames[i], nperiods))
   points = data.frame(x=seq(orig.date,by='days',length=nperiods)[df$Date], 
                       y=df[,pp]*100,  party=rep(partynames[i],length(df$Date[length(df$Date)][df$Date])))
-  # ,high_dat=dat_high2[,i]*100, low_dat=dat_low2[,i]*100 )
   basic_plot22[[i]] <-  ggplot(plot_df) +
     aes(x = time, y = party*100) +
     geom_line(col=cols[i], alpha=1)  +
     geom_ribbon(aes(ymin=low, ymax=high), alpha=0.4, fill=cols[i]) + 
-    #geom_ribbon(data=points, aes(x=x, ymin=low_dat, ymax=high_dat), alpha=0.5, fill=cols[i], inherit.aes = FALSE) +
     geom_point(data=points, aes(x=x, y=y), alpha = 1, color=cols[i], shape=16, size=1) +    
     labs(x="Date", y=paste("Support for", sep=" ", unique(plot_df$party2), paste("(%)", sep=" "), collapse="")) +
     facet_wrap( ~ party2, ncol=1, nrow=1)+
@@ -298,12 +292,9 @@ df$Day = julian(df$startDate,orig.date)-1
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 data = list(nperiod = df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),k=df$length,
-            npolls = nrow(df),  nparties = ncol(Y), y = df[,partynames], day = df$Day,
+            npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
             n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)),
             z=array(NA, dim=c(df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),9,nrow(df))))
-
-tail(df)
-
 
 diri_diri_lm <- '
 model {
@@ -331,15 +322,15 @@ alpha[i] ~ dunif(100, 1000)
 }
 
 x[1, 1:nparties] ~ ddirch(alpha[])
-conc ~ dgamma(1,0.001)
+conc ~ dgamma(1,0.0001)
 
 }
 '
 
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=20000)) 
-ninter=30000
-system.time(all_out220102 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
+ninter=10000
+system.time(all_out220102 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 5, burnin=1000))
 system.time(sum_add220102 <- summary(all_out220102))
 add_out20102 = all_out220102[,which(regexpr("x", row.names(sum_add220102$statistics))==1)]
 
@@ -362,7 +353,7 @@ for(i in 1:9){
   high_add20102[,i] = apply(rbind(add_out20102[[1]][,ind.start[i]:ind.end[i]],add_out20102[[2]][,ind.start[i]:ind.end[i]],add_out20102[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
-tail(df)
+
 
 pred220102 = matrix(NA, ncol=5, nrow=9)
 row.names(pred220102) = partynames
@@ -370,7 +361,7 @@ colnames(pred220102) = c("Elec_res","MAP","Low","High","Diff")
 
 elec2 = elec[,partynames]
 for(i in 1:9){
-  pred220102[i,] =  cbind(elec2[2,i],mean_add20102[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i],low_add20102[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i],high_add20102[nrow(high_add2010),i],(mean_add20102[df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),i]-elec2[2,i]))
+  pred220102[i,] =  cbind(elec2[2,i],mean_add20102[nperiods,i],low_add20102[nperiods,i], high_add20102[nperiods,i],(mean_add20102[nperiods,i]-elec2[2,i]))
 }
 pred220102
 
@@ -441,7 +432,7 @@ df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 
 data = list(nperiod = df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),k=df$length,
-            npolls = nrow(df),  nparties = ncol(Y), y = df[,partynames], day = df$Day,
+            npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
             n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)),
             z=array(NA, dim=c(df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),9,nrow(df))))
 
@@ -472,14 +463,14 @@ alpha[i] ~ dunif(100, 1000)
 }
 
 x[1, 1:nparties] ~ ddirch(alpha[])
-conc ~ dgamma(1,0.001)
+conc ~ dgamma(1,0.0001)
 
 }
 '
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=20000)) 
-ninter=30000
-system.time(all_out220142 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 15, burnin=3000))
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
+ninter=10000
+system.time(all_out220142 <- coda.samples(jags_ddlm,variable.names = c("x","conc"), n.iter = ninter, thin = 5, burnin=1000))
 sum_all220142 = summary(all_out220142)
 add_out20142 = all_out220142[,which(regexpr("x", row.names(sum_all220142$statistics))==1)]
 
