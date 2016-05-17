@@ -18,8 +18,6 @@ y$O = 1-rowSums(y[,1:8])
 y = y[-which(y$O==0),]
 df = y
 
-
-
 elec = data.frame(rbind(c(0.2623,0.0754,0.0659,0.0788,0.3499,0.0524,0.0585,0.0293),
                         c(0.3006,0.0706,0.0560,0.656,0.3066,0.0734,0.0560,0.0570),
                         c(0.2432, 0.0565, 0.0477, 0.0637, 0.3234, 0.0718, 0.0596, 0.1341)))
@@ -112,10 +110,11 @@ par(mfrow=c(3,3))
 for(i in 1: ncol(addout_phi[[1]])){plot(addout_phi[,i], main=colnames(y)[i])}
 par(mfrow=c(1,1)) 
 
-
+addhouse = add_outb[,which(regexpr("house", row.names(sum_addb$statistics))==1)]
 ################################################################
 ################## house effects ###############################
 ################################################################
+addhouse2 = rbind(addhouse[[1]],addhouse[[2]],addhouse[[3]])
 heEE = matrix(NA, nrow=length(apply(addhouse2[,seq(1,dim(addhouse[[1]])[2],96)],2,mean)), ncol = 12*8)
 
 for(i in c(1:(12*8))){
@@ -196,30 +195,18 @@ yrepM = yrepL = yrepKD = yrepC = yrepS = yrepMP = yrepV = yrepSD = matrix(NA, nr
 for(i in 1:dim(rChain[[1]])[1]){
   for(j in 1:nrow(df)){
     k = df$length[j]
-    yrepM[i,j] = rnorm(1, sum(rChain[['M']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'M'])
-    yrepL[i,j] = rnorm(1, sum(rChain[['L']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'L'])
-    yrepKD[i,j] = rnorm(1,sum(rChain[['KD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'KD'])
-    yrepC[i,j] = rnorm(1, sum(rChain[['C']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'C'])
-    yrepS[i,j] = rnorm(1, sum(rChain[['S']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'S'])
-    yrepMP[i,j] = rnorm(1, sum(rChain[['MP']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'MP'])
-    yrepV[i,j] = rnorm(1, sum(rChain[['V']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'V'])
-    yrepSD[i,j] = rnorm(1,sum(rChain[['SD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'SD'])
+    h = as.vector(df$house[j])
+    yrepM[i,j] = rnorm(1, sum(rChain[['M']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'M']+heEE[j, which(colnames(heEE)[1:12]==h)]))
+    yrepL[i,j] = rnorm(1, sum(rChain[['L']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'L']+heEE[j, which(colnames(heEE)[13:24]==h)]))
+    yrepKD[i,j] = rnorm(1,sum(rChain[['KD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'KD']+heEE[j, which(colnames(heEE)[25:36]==h)]))
+    yrepC[i,j] = rnorm(1, sum(rChain[['C']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'C']+heEE[j, which(colnames(heEE)[37:48]==h)]))
+    yrepS[i,j] = rnorm(1, sum(rChain[['S']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'S']+heEE[j, which(colnames(heEE)[49:60]==h)]))
+    yrepMP[i,j] = rnorm(1, sum(rChain[['MP']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j],(prec[j,'MP']+heEE[j, which(colnames(heEE)[61:72]==h)]))
+    yrepV[i,j] = rnorm(1, sum(rChain[['V']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'V']+heEE[j, which(colnames(heEE)[73:84]==h)]))
+    yrepSD[i,j] = rnorm(1,sum(rChain[['SD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], (prec[j,'SD']+heEE[j, which(colnames(heEE)[85:96]==h)]))
   }
 }
 
-#for(i in 1:dim(rChain[[1]])[1]){
-#  for(j in 1:nrow(df)){
-#   k = df$length[j]
-#  yrepM[i,j] = rnorm(1, sum(rChain[['M']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'M']*he[j])
-# yrepL[i,j] = rnorm(1, sum(rChain[['L']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'L']*he[j])
-# yrepKD[i,j] = rnorm(1,sum(rChain[['KD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'KD']*he[j])
-#  yrepC[i,j] = rnorm(1, sum(rChain[['C']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'C']*he[j])
-# yrepS[i,j] = rnorm(1, sum(rChain[['S']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'S']*he[j])
-#  yrepMP[i,j] = rnorm(1, sum(rChain[['MP']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'MP']*he[j])
-# yrepV[i,j] = rnorm(1, sum(rChain[['V']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'V']*he[j])
-#  yrepSD[i,j] = rnorm(1,sum(rChain[['SD']][i,c(df$start[j]:(df$start[j]+k))]*round(df$n[j]/k))/df$n[j], prec[j,'SD']*he[j])
-#}
-#}
 
 yreps = list(M=yrepM,L=yrepL,KD=yrepKD,C=yrepC,S=yrepS,MP=yrepMP,V=yrepV,SD=yrepSD)
 bayespval = matrix(NA,nrow=8, ncol=6)
@@ -235,16 +222,7 @@ for(i in partynames){
 }
 bayespval
 
-#dat_low2 = matrix(NA, ncol=8, nrow=nrow(df3))
-#dat_high2 = matrix(NA, ncol=8, nrow=nrow(df3))
-#colnames(dat_low2) = colnames(dat_high2) = partynames
-#for(i in partynames){
-#dat_low2[,i] = apply(yreps[[i]],2,function(x) sort(x)[percentile5])
-#dat_high2[,i] = apply(yreps[[i]],2,function(x) sort(x)[percentile95])
-#}
 
-#dat_high2 = dat_high2[,colnames(y)]
-#dat_low2 = dat_low2[,colnames(y)]
 
 #################################################
 ################# PLOTS #########################
