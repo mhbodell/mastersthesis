@@ -58,18 +58,18 @@ y[i, 1:nparties] ~ ddirch(b[i,1:nparties] * n[i])
 }
 #dynamic model
 for(i in 2:nperiod) {
-conc[i] ~ dnorm(conc[i-1], sigd)
-x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties] * conc[i-1])
+conc[i] ~ dnorm(conc[i-1], 1/sigd)
+x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties] * conc[i])
 }
-for (i in 1:nparties) { alpha[i] ~ dunif(100, 1000)}
+for (i in 1:nparties) { alpha[i] <- 1/9}
 x[1, 1:nparties] ~ ddirch(alpha[])
 conc[1]~dgamma(1,0.0001)
-sigd~dgamma(1,1)
+sigd~dgamma(1,0.001)
 }
 '
 
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000))
+system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=80000))
 ninter=20000
 system.time(add_out <- coda.samples(jags_ddlm,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 10, burnin=5000))
 
@@ -291,7 +291,7 @@ df$Day = julian(df$startDate,orig.date)-1
 
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
-
+df = df[-which(df$endDate>=end.date),]
 data = list(nperiod = df$Day[nrow(df)]+df$length[nrow(df)]+1,k=df$length,
             npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
             n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)), org = as.numeric(df$house),
@@ -305,24 +305,24 @@ for(i in 1:npolls) {
 n2[i] <- round(n[i]/k[i])
 for(j in 1:k[i]){z[j,1:nparties,i] <- x[day[i]+j, 1:nparties] }
 for(l in 1:nparties){b[i,l] <- sum(z[1:k[i],l,i]*n2[i])/n[i]}
-y[i, 1:nparties] ~ ddirch(b[i,1:nparties] *n[i])
+y[i, 1:nparties] ~ ddirch(b[i,1:nparties] * n[i])
 }
 #dynamic model
 for(i in 2:nperiod) {
-conc[i] ~ dnorm(conc[i-1], sigd)
-x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties] * conc[i-1])
+conc[i] ~ dnorm(conc[i-1], 1/sigd)
+x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties] * conc[i])
 }
-for (i in 1:nparties) { alpha[i] ~ dunif(100, 1000)}
+for (i in 1:nparties) { alpha[i] <- 1/9}
 x[1, 1:nparties] ~ ddirch(alpha[])
-
 conc[1]~dgamma(1,0.0001)
 sigd~dgamma(1,1)
 }
 '
+
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
 system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
-ninter=10000
-system.time(all_out22010 <- coda.samples(jags_ddlm,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 5, burnin=1000))
+ninter=20000
+system.time(all_out22010 <- coda.samples(jags_ddlm,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 10, burnin=5000))
 system.time(sum_add22010 <- summary(all_out22010))
 add_out2010 = all_out22010[,which(regexpr("x", row.names(sum_add22010$statistics))==1)]
 
@@ -419,7 +419,7 @@ df$Day = julian(df$startDate,orig.date)-1
 
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
-
+df = df[-which(df$endDate>=end.date),]
 data = list(nperiod = df$Day[nrow(df)]+df$length[nrow(df)]+1,k=df$length,
             npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
             n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)), 
@@ -432,16 +432,15 @@ for(i in 1:npolls) {
 n2[i] <- round(n[i]/k[i])
 for(j in 1:k[i]){z[j,1:nparties,i] <- x[day[i]+j, 1:nparties] }
 for(l in 1:nparties){b[i,l] <- sum(z[1:k[i],l,i]*n2[i])/n[i]}
-y[i, 1:nparties] ~ ddirch(b[i,1:nparties] *n[i])
+y[i, 1:nparties] ~ ddirch(b[i,1:nparties] * n[i])
 }
 #dynamic model
 for(i in 2:nperiod) {
-conc[i] ~ dnorm(conc[i-1], sigd)
-x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties] * conc[i-1])
+conc[i] ~ dnorm(conc[i-1], 1/sigd)
+x[i, 1:nparties] ~ ddirch(x[i-1,  1:nparties] * conc[i])
 }
-for (i in 1:nparties) { alpha[i] ~ dunif(100, 1000)}
+for (i in 1:nparties) { alpha[i] <- 1/9}
 x[1, 1:nparties] ~ ddirch(alpha[])
-
 conc[1]~dgamma(1,0.0001)
 sigd~dgamma(1,1)
 }
@@ -449,8 +448,8 @@ sigd~dgamma(1,1)
 
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
 system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
-ninter=10000
-system.time(all_out22014 <- coda.samples(jags_ddlm,variable.names = c("x","conc","sigd"), n.iter = ninter, thin = 5, burnin=1000))
+ninter=20000
+system.time(all_out22014 <- coda.samples(jags_ddlm,variable.names = c("x","conc","sigd"), n.iter = ninter, thin = 10, burnin=5000))
 sum_all22014 = summary(all_out22014)
 add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
 
