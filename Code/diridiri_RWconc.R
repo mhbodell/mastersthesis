@@ -69,11 +69,11 @@ sigd~dgamma(1,0.001)
 '
 
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=80000))
+system.time(jags_ddlmRW <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=80000))
 ninter=20000
-system.time(add_out <- coda.samples(jags_ddlm,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 10, burnin=5000))
+system.time(add_outRW <- coda.samples(jags_ddlmRW,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 10, burnin=5000))
 
-system.time(sum_add <- summary(add_out))
+system.time(sum_addRW <- summary(add_outRW))
 
 addout_x2 = add_out[,which(regexpr("x", row.names(sum_add$statistics))==1)]
 out_conc = add_out[,which(regexpr("conc", row.names(sum_add$statistics))==1)]
@@ -292,7 +292,7 @@ df$Day = julian(df$startDate,orig.date)-1
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 df = df[-which(df$endDate>=end.date),]
-data = list(nperiod = df$Day[nrow(df)]+df$length[nrow(df)]+1,k=df$length,
+data = list(nperiod = df$Day[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)])),k=df$length,
             npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
             n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)), org = as.numeric(df$house),
             z=array(NA, dim=c(df$Day[nrow(df)]+df$length[nrow(df)]+1,9,nrow(df))),
@@ -320,13 +320,14 @@ sigd~dgamma(1,1)
 '
 
 writeLines(diri_diri_lm,con="diri_diri_lm.bug")
-system.time(jags_ddlm <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
-ninter=20000
-system.time(all_out22010 <- coda.samples(jags_ddlm,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 10, burnin=5000))
-system.time(sum_add22010 <- summary(all_out22010))
-add_out2010 = all_out22010[,which(regexpr("x", row.names(sum_add22010$statistics))==1)]
+system.time(jags_ddlmRW2010 <- jags.model("diri_diri_lm.bug", data = data, n.chain=3, n.adapt=100000)) 
+ninter=40000
+system.time(all_outRW22010 <- coda.samples(jags_ddlmRW2010,variable.names = c("x","conc", "sigd"), n.iter = ninter, thin = 20, burnin=8000))
+system.time(sum_addRW22010 <- summary(all_outRW22010))
+add_out2010 = all_outRW22010[,which(regexpr("x", row.names(sum_addRW22010$statistics))==1)]
 
-nperiods= df$Day[nrow(df)]+df$length[nrow(df)]+1
+sum_add22010 = sum_addRW22010
+nperiods= df$Day[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)]))
 nsim = dim(add_out2010[[1]])[1]*3
 mean_add2010 = matrix(NA, ncol=9, nrow=nperiods)
 ind.start = 1
@@ -420,7 +421,7 @@ df$Day = julian(df$startDate,orig.date)-1
 df$house = factor(df$house, levels=c("Demoskop","Inizio", "Ipsos" ,"Novus" ,"SCB" ,"Sentio" ,
                                      "Sifo" ,"Skop" ,"SVT", "United Minds", "YouGov","Election"))
 df = df[-which(df$endDate>=end.date),]
-data = list(nperiod = df$Day[nrow(df)]+df$length[nrow(df)]+1,k=df$length,
+data = list(nperiod = df$Day[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),k=df$length,
             npolls = nrow(df),  nparties = 9, y = df[,partynames], day = df$Day,
             n = df$n, b=matrix(NA,ncol=9, nrow=nrow(df)), 
             z=array(NA, dim=c(df$Day[nrow(df)]+df$length[nrow(df)]+1,9,nrow(df))))
@@ -454,7 +455,7 @@ sum_all22014 = summary(all_out22014)
 add_out2014 = all_out22014[,which(regexpr("x", row.names(sum_all22014$statistics))==1)]
 
 
-nperiods=df$Day[nrow(df)]+df$length[nrow(df)]+1
+nperiods=df$Day[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)]))
 nsim = dim(all_out22014[[1]])[1]*3
 mean_add2014 = matrix(NA, ncol=9, nrow=nperiods)
 ind.start = 1
@@ -473,15 +474,14 @@ for(i in 1:9){
   high_add2014[,i] = apply(rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],add_out2014[[3]][,ind.start[i]:ind.end[i]]),2, function(x) sort(x)[percentile95])
 }
 
-df$Date[nrow(df)]+as.numeric(julian(elec$Date[2], df$endDate[nrow(df)]))
 
 pred22014 = matrix(NA, ncol=5, nrow=9)
 row.names(pred22014) = partynames
 colnames(pred22014) = c("Elec_res","MAP","Low","High","Diff")
 elec2 = elec[,partynames]
 for(i in 1:9){
-  pred22014[i,] =    cbind(elec2[3,i],mean_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],low_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],high_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],(mean_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i]-elec2[3,i]))
-  
+  pred22014[i,] = cbind(elec2[3,i],mean_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],low_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],high_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i],(mean_add2014[df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)])),i]-elec2[3,i]))
+
 }
 pred22014
 
@@ -492,8 +492,8 @@ row.names(rmse_elec2014) = row.names(pred22014)
 for(i in 1:9){
   ind.start[i+1] = i*nperiods+1
   ind.end[i+1] =  ind.start[i+1]+nperiods-1
-  rmse_elec2014[i,]  = sqrt((sum((rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],
-                                        add_out2014[[3]][,ind.start[i]:ind.end[i]])[,df$Date[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)]))]-elec2[3,i])^2)/nsim))
+ rmse_elec2014[i,]  = sqrt((sum((rbind(add_out2014[[1]][,ind.start[i]:ind.end[i]],add_out2014[[2]][,ind.start[i]:ind.end[i]],
+                                       add_out2014[[3]][,ind.start[i]:ind.end[i]])[,df$Day[nrow(df)]+as.numeric(julian(elec$Date[3], df$endDate[nrow(df)]))]-elec2[3,i])^2)/nsim))
   
 }
-mse_elec2014
+rmse_elec2014
